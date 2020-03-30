@@ -32,7 +32,7 @@ DATA_LOADER:
 
 ############################ MODEL ############################
 MODEL:
-  TYPE: 'XLANTransformer'
+  TYPE: 'XTransformer'
   SEQ_LEN: 17                               # include <EOS>/<BOS>
   VOCAB_SIZE: 9487                          # exclude <EOS>/<BOS>
   ########## word embedding ##########
@@ -91,7 +91,7 @@ MODEL:
 SOLVER:
   BASE_LR: 0.00001
   TYPE: 'RADAM'                 # 'ADAM', 'SGD', 'ADAGRAD', 'RMSPROP'
-  MAX_EPOCH: 70
+  MAX_EPOCH: 60
   MAX_ITER: -1
   GRAD_CLIP: 0.1               # Norm:5 , Clamp:0.1
   GRAD_CLIP_TYPE: 'Clamp'       # 'Clamp', 'Norm'

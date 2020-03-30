@@ -66,8 +66,8 @@ class Tester(object):
             )
         
     def eval(self, epoch):
-        res = self.evaler(self.model)
-        self.logger.info('######## Epoch ' + str(epoch + 1) + ' ########')
+        res = self.evaler(self.model, 'test_' + str(epoch))
+        self.logger.info('######## Epoch ' + str(epoch) + ' ########')
         self.logger.info(str(res))
 
     def snapshot_path(self, name, epoch):

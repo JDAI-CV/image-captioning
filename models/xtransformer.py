@@ -19,9 +19,9 @@ def subsequent_mask(size):
     subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
     return torch.from_numpy(subsequent_mask) == 0
 
-class XLANTransformer(BasicModel):
+class XTransformer(BasicModel):
     def __init__(self):
-        super(XLANTransformer, self).__init__()
+        super(XTransformer, self).__init__()
         self.vocab_size = cfg.MODEL.VOCAB_SIZE + 1
 
         # att_feats encoder

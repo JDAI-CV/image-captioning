@@ -1,11 +1,11 @@
 from models.updown import UpDown
 from models.xlan import XLAN
-from models.xlan_transformer import XLANTransformer
+from models.xtransformer import XTransformer
 
 __factory = {
     'UpDown': UpDown,
     'XLAN': XLAN,
-    'XLANTransformer': XLANTransformer
+    'XTransformer': XTransformer
 }
 
 def names():

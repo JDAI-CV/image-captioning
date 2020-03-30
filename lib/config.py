@@ -87,7 +87,7 @@ __C.DATA_LOADER.MAX_FEAT = -1
 # ---------------------------------------------------------------------------- #
 __C.MODEL = edict()
 
-__C.MODEL.TYPE = 'UpDown'               # 'UpDown', 'XLAN', 'XLANTransformer'
+__C.MODEL.TYPE = 'UpDown'               # 'UpDown', 'XLAN', 'XTransformer'
 
 __C.MODEL.SEQ_LEN = 17                  # include <EOS>/<BOS>
 

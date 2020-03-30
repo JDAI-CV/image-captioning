@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import torch
 import tqdm
+import json
 import evaluation
 import lib.utils as utils
 import datasets.data_loader as data_loader
@@ -33,7 +34,7 @@ class Evaler(object):
         kwargs['GREEDY_DECODE'] = cfg.INFERENCE.GREEDY_DECODE
         return kwargs
         
-    def __call__(self, model):
+    def __call__(self, model, rname):
         model.eval()
         
         results = []
@@ -53,6 +54,11 @@ class Evaler(object):
                     result = {cfg.INFERENCE.ID_KEY: int(ids[sid]), cfg.INFERENCE.CAP_KEY: sent}
                     results.append(result)
         eval_res = self.evaler.eval(results)
+
+        result_folder = os.path.join(cfg.ROOT_DIR, 'result')
+        if not os.path.exists(result_folder):
+            os.mkdir(result_folder)
+        json.dump(results, open(os.path.join(result_folder, 'result_' + rname +'.json'), 'w'))
 
         model.train()
         return eval_res

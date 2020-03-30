@@ -32,7 +32,7 @@ DATA_LOADER:
 
 ############################ MODEL ############################
 MODEL:
-  TYPE: 'XLANTransformer'
+  TYPE: 'XTransformer'
   SEQ_LEN: 17                               # include <EOS>/<BOS>
   VOCAB_SIZE: 9487                          # exclude <EOS>/<BOS>
   ########## word embedding ##########

@@ -59,10 +59,6 @@ class Trainer(object):
         )
         self.scorer = Scorer()
 
-        #from torch.utils.collect_env import get_pretty_env_info
-        #env_str = get_pretty_env_info()
-        #print(env_str)
-
     def setup_logging(self):
         self.logger = logging.getLogger(cfg.LOGGER_NAME)
         self.logger.setLevel(logging.INFO)
@@ -131,11 +127,11 @@ class Trainer(object):
         if self.distributed and dist.get_rank() > 0:
             return None
             
-        val_res = self.val_evaler(self.model)
+        val_res = self.val_evaler(self.model, 'val_' + str(epoch + 1))
         self.logger.info('######## Epoch (VAL)' + str(epoch + 1) + ' ########')
         self.logger.info(str(val_res))
 
-        test_res = self.test_evaler(self.model)
+        test_res = self.test_evaler(self.model,'test_' + str(epoch + 1))
         self.logger.info('######## Epoch (TEST)' + str(epoch + 1) + ' ########')
         self.logger.info(str(test_res))
 
@@ -283,11 +279,17 @@ class Trainer(object):
                 losses.update(loss.item())
                 self.display(iteration, data_time, batch_time, losses, loss_info)
                 iteration += 1
+
+                if self.distributed:
+                    dist.barrier()
         
             self.save_model(epoch)
             val = self.eval(epoch)
             self.optim.scheduler_step('Epoch', val)
             self.scheduled_sampling(epoch)
+
+            if self.distributed:
+                dist.barrier()
 
 def parse_args():
     """

@@ -241,6 +241,34 @@ class AttBasicModel(BasicModel):
 
         return outputs, log_probs
 
+    # For the experiments of X-LAN, we use the following beam search code, 
+    # which achieves slightly better results but much slower.
+    
+    #def decode_beam(self, **kwargs):
+    #    beam_size = kwargs['BEAM_SIZE']
+    #    gv_feat, att_feats, att_mask, p_att_feats = self.preprocess(**kwargs)
+    #    batch_size = gv_feat.size(0)
+    #
+    #    sents = Variable(torch.zeros((cfg.MODEL.SEQ_LEN, batch_size), dtype=torch.long).cuda())
+    #    logprobs = Variable(torch.zeros(cfg.MODEL.SEQ_LEN, batch_size).cuda())   
+    #    self.done_beams = [[] for _ in range(batch_size)]
+    #    for n in range(batch_size):
+    #        state = self.init_hidden(beam_size)
+    #        gv_feat_beam = gv_feat[n:n+1].expand(beam_size, gv_feat.size(1)).contiguous()
+    #        att_feats_beam = att_feats[n:n+1].expand(*((beam_size,)+att_feats.size()[1:])).contiguous()
+    #        att_mask_beam = att_mask[n:n+1].expand(*((beam_size,)+att_mask.size()[1:]))
+    #        p_att_feats_beam = p_att_feats[n:n+1].expand(*((beam_size,)+p_att_feats.size()[1:])).contiguous() if p_att_feats is not None else None
+    #
+    #        wt = Variable(torch.zeros(beam_size, dtype=torch.long).cuda())
+    #        kwargs = self.make_kwargs(wt, gv_feat_beam, att_feats_beam, att_mask_beam, p_att_feats_beam, state, **kwargs)
+    #        logprobs_t, state = self.get_logprobs_state(**kwargs)
+    #
+    #        self.done_beams[n] = self.beam_search(state, logprobs_t, **kwargs)
+    #        sents[:, n] = self.done_beams[n][0]['seq'] 
+    #        logprobs[:, n] = self.done_beams[n][0]['logps']
+    #    return sents.transpose(0, 1), logprobs.transpose(0, 1)
+
+
     def decode(self, **kwargs):
         greedy_decode = kwargs['GREEDY_DECODE']
  
