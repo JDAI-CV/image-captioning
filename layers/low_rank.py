@@ -118,7 +118,7 @@ class LowRank(nn.Module):
             v2 = value2
         
         attn_map = q.unsqueeze(-2) * k.unsqueeze(-3)
-        attn = self.attn_net.forward2(attn_map, mask, v1, v2).transpose(1, 2).contiguous()
+        attn = self.attn_net.forward(attn_map, mask, v1, v2).transpose(1, 2).contiguous()
         attn = attn.view(batch_size, -1, self.num_heads * self.head_dim)
         return attn
 

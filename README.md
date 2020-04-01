@@ -1,14 +1,12 @@
 # Introduction
-(not finished yet, please wait patiently)
-
-This repository is for X-Linear Attention Networks for Image Captioning (CVPR 2020).
+This repository is for **X-Linear Attention Networks for Image Captioning** (CVPR 2020). The original paper can be found [here](https://arxiv.org/pdf/2003.14080.pdf).
 
 Please cite with the following BibTeX:
 
 ```
-@inproceedings{cornia2020m2,
-  title={{X-Linear Attention Networks for Image Captioning}},
-  author={Yingwei Pan, Ting Yao, Yehao Li, and Tao Mei},
+@inproceedings{xlinear2020cvpr,
+  title={X-Linear Attention Networks for Image Captioning},
+  author={Pan, Yingwei and Yao, Ting and Li, Yehao and Mei, Tao},
   booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
   year={2020}
 }
@@ -71,6 +69,3 @@ CUDA_VISIBLE_DEVICES=0 python3 main_test.py --folder experiments/model_folder --
 
 ## Acknowledgements
 Thanks the contribution of [self-critical.pytorch](https://github.com/ruotianluo/self-critical.pytorch) and awesome PyTorch team.
-
-
-

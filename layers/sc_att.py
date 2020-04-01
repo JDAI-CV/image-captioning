@@ -18,7 +18,7 @@ class SCAtt(BasicAtt):
         if att_mask is not None:
             att_mask = att_mask.unsqueeze(1)
             att_mask_ext = att_mask.unsqueeze(-1)
-            att_map_pool = (torch.sum(att_map * att_mask_ext, -2) / torch.sum(att_mask_ext, -2))
+            att_map_pool = torch.sum(att_map * att_mask_ext, -2) / torch.sum(att_mask_ext, -2)
         else:
             att_map_pool = att_map.mean(-2)
 
@@ -31,38 +31,10 @@ class SCAtt(BasicAtt):
             alpha_spatial = alpha_spatial.masked_fill(att_mask == 0, -1e9)
         alpha_spatial = F.softmax(alpha_spatial, dim=-1)
 
-        value2 = torch.matmul(alpha_spatial.unsqueeze(-2), value2).squeeze(-2)
-
-        attn = value1 * value2 * alpha_channel
-        return attn
-
-    # att_map: batch_size * seq_num * att_num * dim
-    # att_mask: batch_size * seq_num * att_num
-    # value1: batch_size * seq_num * dim
-    # value2: batch_size * att_num * dim
-    def forward2(self, att_map, att_mask, value1, value2):
-        if self.attention_basic is not None:
-            att_map = self.attention_basic(att_map)
-
-        if att_mask is not None:
-            att_mask = att_mask.unsqueeze(1)
-            att_mask_ext = att_mask.unsqueeze(-1)
-            att_map_pool = torch.sum(att_map * att_mask_ext, -2) / torch.sum(att_mask_ext, -2)
+        if len(alpha_spatial.shape) == 4: # batch_size * head_num * seq_num * seq_num (for xtransformer)
+            value2 = torch.matmul(alpha_spatial, value2)
         else:
-            att_map_pool = att_map.mean(-2)
-
-        alpha_spatial = self.attention_last(att_map)        
-        alpha_channel = self.attention_last2(att_map_pool)
-        alpha_channel = torch.sigmoid(alpha_channel)  # batch_size * seq_num * dim
-
-        alpha_spatial = alpha_spatial.squeeze(-1) # batch_size * seq_num * att_num
-        if att_mask is not None:
-            alpha_spatial = alpha_spatial.masked_fill(att_mask == 0, -1e9)
-        alpha_spatial = F.softmax(alpha_spatial, dim=-1)
-
-        value2 = torch.matmul(alpha_spatial, value2)  # batch_size * seq_num * dim
+            value2 = torch.matmul(alpha_spatial.unsqueeze(-2), value2).squeeze(-2)
 
         attn = value1 * value2 * alpha_channel
         return attn
-
-
