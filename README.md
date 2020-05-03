@@ -30,7 +30,7 @@ Please cite with the following BibTeX:
 ## Data preparation
 1. Download the [bottom up features](https://github.com/peteanderson80/bottom-up-attention) and convert them to npz files
 ```
-python3 tools/create_feats.py --infeats bottom_up_tsv --outfolder ./mscoco/feature/up_down_10_100
+python2 tools/create_feats.py --infeats bottom_up_tsv --outfolder ./mscoco/feature/up_down_10_100
 ```
 
 2. Download the [annotations](https://drive.google.com/open?id=1i5YJRSZtpov0nOtRyfM0OS1n0tPCGiCS) into the mscoco folder. More details about data preparation can be referred to [self-critical.pytorch](https://github.com/ruotianluo/self-critical.pytorch)
