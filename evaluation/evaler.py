@@ -12,7 +12,7 @@ from lib.config import cfg
 from pycocoevalcap.bleu.bleu import Bleu
 from pycocoevalcap.meteor import Meteor
 from pycocoevalcap.rouge import Rouge
-
+from scorer.cider import Cider
 
 def compute_scores(gts, res):
     """
@@ -26,6 +26,7 @@ def compute_scores(gts, res):
     # Set up scorers
     scorers = [
         (Bleu(4), ["BLEU_1", "BLEU_2", "BLEU_3", "BLEU_4"]),
+        (Cider(), 'CIDEr'),
         (Meteor(), "METEOR"),
         (Rouge(), "ROUGE_L")
     ]

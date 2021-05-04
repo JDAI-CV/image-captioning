@@ -102,7 +102,8 @@ class Trainer(object):
                 broadcast_buffers = False
             )
         else:
-            self.model = torch.nn.DataParallel(model).cuda()
+            # self.model = torch.nn.DataParallel(model).cuda() # strange
+            self.model = model.cuda()  # strange
 
         if self.args.resume > 0:
             self.model.load_state_dict(
@@ -217,6 +218,7 @@ class Trainer(object):
             gv_feat = kwargs[cfg.PARAM.GLOBAL_FEAT]
             att_feats = kwargs[cfg.PARAM.ATT_FEATS]
             att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+            target_seq = kwargs[cfg.PARAM.TARGET_SENT]
 
             # max
             kwargs['BEAM_SIZE'] = 1
@@ -229,7 +231,7 @@ class Trainer(object):
             with torch.no_grad():
                 seq_max, logP_max = self.model.module.decode(**kwargs)
             self.model.train()
-            rewards_max, rewards_info_max = self.scorer(ids, seq_max.data.cpu().numpy().tolist())
+            rewards_max, rewards_info_max = self.scorer(target_seq, seq_max.data.cpu().numpy().tolist())
             rewards_max = utils.expand_numpy(rewards_max)
 
             ids = utils.expand_numpy(ids)
