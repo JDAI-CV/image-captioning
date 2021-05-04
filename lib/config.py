@@ -93,7 +93,7 @@ __C.MODEL.TYPE = 'UpDown'               # 'UpDown', 'XLAN', 'XTransformer'
 
 __C.MODEL.SEQ_LEN = 60                  # include <EOS>/<BOS> # modified
 
-__C.MODEL.VOCAB_SIZE = 9487             # exclude <EOS>/<BOS> # TODO
+__C.MODEL.VOCAB_SIZE = 760             # exclude <EOS>/<BOS> # TODO : IUXRAY: 760
 
 __C.MODEL.WORD_EMBED_DIM = 512         # TODO # Modified
 

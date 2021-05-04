@@ -13,9 +13,10 @@ class Tokenizer(object):
         else:
             self.clean_report = self.clean_report_mimic_cxr
         self.ann = json.loads(open(self.ann_path, 'r').read())
-        self.token2idx, self.idx2token = self.create_vocabulary()
+        self.token2idx, self.idx2token = self.create_vocabulary_and_CIDEr_DF()
 
-    def create_vocabulary(self):
+    def create_vocabulary_and_CIDEr_DF(self):
+        # print('Building Vocabulary and CIDEr DF! ')
         print('Building Vocabulary! ')
         total_tokens = []
 
@@ -31,7 +32,19 @@ class Tokenizer(object):
         for idx, token in enumerate(vocab):
             token2idx[token] = idx + 1
             idx2token[idx + 1] = token
-        print('Done. Dataset: {} Vocab Size: {}, include "<unk>" , non exists "sos" "eos"'.format(self.dataset_name,len(vocab)))
+        print('Vocab Done. Dataset: {} Vocab Size: {}, include "<unk>" , non exists "sos" "eos"'.format(self.dataset_name,len(vocab)))
+
+        # for text in self.ann['train']:
+        #     toks = tokenizer.tokenize(textfilter.filter(text))
+        #     toks = tokenfilter.filter(toks)
+        #     ftext = ' '.join(toks)
+        #     ftexts.append(ftext)
+        #
+        # df = GenEval.compute_cider_df(texts)
+        # with gzip.open(args.output, 'w') as f:
+        #     pickle.dump(df, f)
+
+
         return token2idx, idx2token
 
     def clean_report_iu_xray(self, report):
@@ -95,3 +108,20 @@ class Tokenizer(object):
         for ids in ids_batch:
             out.append(self.decode(ids))
         return out
+
+
+# def cider_df(texts):
+#   tokenizer = get_tokenizer('nltk')
+#   textfilter = get_textfilter('lower')
+#   tokenfilter = get_tokenfilter('none')
+
+#   ftexts = []
+#   for text in texts:
+#       toks = tokenizer.tokenize(textfilter.filter(text))
+#       toks = tokenfilter.filter(toks)
+#       ftext = ' '.join(toks)
+#       ftexts.append(ftext)
+
+#   df = GenEval.compute_cider_df(texts) # texts : [report_text, ... ] , where report_text : [filtered_token, ... ]
+#   with gzip.open('mimic-cxr_train-df.bin.gz', 'w') as f:
+#       pickle.dump(df, f)

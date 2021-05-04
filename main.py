@@ -231,10 +231,10 @@ class Trainer(object):
             with torch.no_grad():
                 seq_max, logP_max = self.model.module.decode(**kwargs)
             self.model.train()
-            rewards_max, rewards_info_max = self.scorer(target_seq, seq_max.data.cpu().numpy().tolist())
+            rewards_max, rewards_info_max = self.scorer(target_seq, seq_max.data.cpu().numpy().tolist()) # Modified
             rewards_max = utils.expand_numpy(rewards_max)
 
-            ids = utils.expand_numpy(ids)
+            ids = utils.expand_numpy(ids) # to check?
             gv_feat = utils.expand_tensor(gv_feat, cfg.DATA_LOADER.SEQ_PER_IMG)
             att_feats = utils.expand_tensor(att_feats, cfg.DATA_LOADER.SEQ_PER_IMG)
             att_mask = utils.expand_tensor(att_mask, cfg.DATA_LOADER.SEQ_PER_IMG)
@@ -247,7 +247,7 @@ class Trainer(object):
             kwargs[cfg.PARAM.ATT_FEATS_MASK] = att_mask
 
             seq_sample, logP_sample = self.model.module.decode(**kwargs)
-            rewards_sample, rewards_info_sample = self.scorer(ids, seq_sample.data.cpu().numpy().tolist())
+            rewards_sample, rewards_info_sample = self.scorer(target_seq, seq_sample.data.cpu().numpy().tolist()) # Modified
 
             rewards = rewards_sample - rewards_max
             rewards = torch.from_numpy(rewards).float().cuda()
