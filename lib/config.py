@@ -85,9 +85,9 @@ __C.DATA_LOADER.MAX_FEAT = -1
 # ---------------------------------------------------------------------------- #
 # Model options
 # ---------------------------------------------------------------------------- #
-__C.MODEL.PretrainedImageModel = '/content/model4dict.lol' # TODO # Modified
-
 __C.MODEL = edict()
+
+__C.MODEL.PretrainedImageModel = '/content/image-captioning/model_auc14.dict.gz' # TODO # Modified
 
 __C.MODEL.TYPE = 'UpDown'               # 'UpDown', 'XLAN', 'XTransformer'
 
@@ -306,7 +306,7 @@ __C.INFERENCE.VOCAB = 'coco_vocabulary.txt'
 
 __C.INFERENCE.ID_KEY = 'image_id'
 
-__C.INFERENCE.CAP_KEY = 'caption'
+__C.INFERENCE.CAP_KEY = 'report' # Modified
 
 __C.INFERENCE.EVAL = 'COCO'
 

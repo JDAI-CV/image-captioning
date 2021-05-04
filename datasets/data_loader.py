@@ -35,7 +35,9 @@ def sample_collate(batch):
     return indices, input_seq, target_seq, gv_feat, att_feats, att_mask
 
 def sample_collate_val(batch):
-    indices, gv_feat, att_feats = zip(*batch)
+    # indices, input_sequence, target_sequence, gv_feat, image
+    indices, input_seq, target_seq, gv_feat, att_feats = zip(*batch)
+    # indices, gv_feat, att_feats = zip(*batch)
     
     indices = np.stack(indices, axis=0).reshape(-1)
     gv_feat = torch.cat([torch.from_numpy(b) for b in gv_feat], 0)
@@ -57,14 +59,14 @@ def sample_collate_val(batch):
     att_feats = torch.cat(feat_arr, 0)
     att_mask = torch.cat(mask_arr, 0)
 
-    return indices, gv_feat, att_feats, att_mask
+    return indices, target_seq, gv_feat, att_feats, att_mask
 
 
 def load_train(distributed, epoch, dataset):
     sampler = samplers.distributed.DistributedSampler(dataset, epoch=epoch) \
         if distributed else None
     shuffle = cfg.DATA_LOADER.SHUFFLE if sampler is None else False
-    
+
     loader = torch.utils.data.DataLoader(
         dataset,
         batch_size = cfg.TRAIN.BATCH_SIZE,
@@ -77,7 +79,7 @@ def load_train(distributed, epoch, dataset):
     )
     return loader
 
-def load_val(split = 'val'):
+def load_val(dataset):
     # coco_set = CocoDataset(
     #     image_ids_path = image_ids_path,
     #     input_seq = None,
@@ -87,8 +89,6 @@ def load_val(split = 'val'):
     #     seq_per_img = 1,
     #     max_feat_num = cfg.DATA_LOADER.MAX_FEAT
     # )
-
-    dataset = IUXRAY(split = split)
 
     loader = torch.utils.data.DataLoader(
         dataset,

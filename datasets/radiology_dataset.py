@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch
-import torch.utils.data.Dataset as Dataset
+from torch.utils.data import Dataset
 from torchvision import transforms
 import json
 from PIL import Image
@@ -9,12 +9,12 @@ from .tokenizers import Tokenizer
 
 
 class BaseDataset(Dataset):
-    def __init__(self, image_dir, ann_path, dataset_name, tokenizer, split):
+    def __init__(self, image_dir, ann_path, tokenizer, split):
         self.image_dir = image_dir
         self.ann_path = ann_path
         self.max_seq_length = 60
         self.split = split
-        self.tokenizer = Tokenizer(ann_path = ann_path, dataset_name = dataset_name)
+        self.tokenizer = tokenizer
         if split == 'train':
             self.transform = transforms.Compose([
                 transforms.Resize(256),
@@ -33,7 +33,7 @@ class BaseDataset(Dataset):
 
         self.examples = self.texts[self.split]
         for i in range(len(self.examples)):
-            self.examples[i]['ids'] = tokenizer(self.examples[i]['report'])[:self.max_seq_length]
+            self.examples[i]['ids'] = self.tokenizer(self.examples[i]['report'])[:self.max_seq_length]
 
     def __len__(self):
         return len(self.examples)
@@ -41,7 +41,9 @@ class BaseDataset(Dataset):
 
 class IUXRAY(BaseDataset):
     def __getitem__(self, idx):
-        indices = np.array([idx]).astype('int')
+        # indices = np.array([idx]).astype('int') # Modified
+        image_id = self.examples[idx]['image_id']
+        indices = np.array([image_id])
         example = self.examples[idx]
         image_path = example['image_path']
         image_1 = Image.open(os.path.join(self.image_dir, image_path[0])).convert('RGB')
@@ -68,7 +70,9 @@ class IUXRAY(BaseDataset):
 
 class MimiccxrSingleImageDataset(BaseDataset): # MimiccxrSingleImageDataset
     def __getitem__(self, idx):
-        indices = np.array([idx]).astype('int')
+        # indices = np.array([idx]).astype('int') # Modified
+        image_id = self.examples[idx]['image_id']
+        indices = np.array([image_id])
         example = self.examples[idx]
         image_path = example['image_path']
         image = Image.open(os.path.join(self.image_dir, image_path[0])).convert('RGB')

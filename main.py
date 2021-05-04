@@ -17,6 +17,7 @@ import losses
 import models
 import datasets
 from datasets.radiology_dataset import IUXRAY
+from datasets.tokenizers import Tokenizer
 import lib.utils as utils
 from lib.utils import AverageMeter
 from optimizer.optimizer import Optimizer
@@ -47,11 +48,23 @@ class Trainer(object):
         self.setup_dataset()
         self.setup_network()
         self.val_evaler = Evaler(
-            split = 'val'
-        )
+            IUXRAY(
+                image_dir=args.image_dir,
+                ann_path=args.ann_path,
+                tokenizer=self.tokenizer,
+                split='val'
+            ),
+            tokenizer = self.tokenizer
+        ) # TODO
         self.test_evaler = Evaler(
-            split = 'test'
-        )
+            IUXRAY(
+                image_dir=args.image_dir,
+                ann_path=args.ann_path,
+                tokenizer=self.tokenizer,
+                split='test'
+            ),
+            tokenizer = self.tokenizer
+        ) # TODO
         self.scorer = Scorer()
 
     def setup_logging(self):
@@ -102,8 +115,12 @@ class Trainer(object):
         self.rl_criterion = losses.create(cfg.LOSSES.RL_TYPE).cuda()
         
     def setup_dataset(self, dataset = 'IUXRAY'):
+        self.tokenizer = Tokenizer(ann_path = args.ann_path,dataset_name = args.dataset_name)
         if dataset == 'IUXRAY':
             self.dataset = IUXRAY(
+                image_dir = args.image_dir,
+                ann_path = args.ann_path,
+                tokenizer = self.tokenizer,
                 split = 'train'
             )
         # self.coco_set = datasets.coco_dataset.CocoDataset(
@@ -299,6 +316,9 @@ def parse_args():
     parser.add_argument('--folder', dest='folder', type=str, default=None)
     parser.add_argument("--local_rank", type=int, default=0)
     parser.add_argument("--resume", type=int, default=-1)
+    parser.add_argument('--image_dir', type=str, default='/content/iu_xray_resized/images/', help='the path to the directory containing the data.')
+    parser.add_argument('--ann_path', type=str, default='/content/iu_xray_resized/annotation.json', help='the path to the directory containing the data.')
+    parser.add_argument('--dataset_name', type=str, default='iuxray', choices=['iuxray', 'mimiccxr'], help='the dataset to be used.')
 
     if len(sys.argv) == 1:
         parser.print_help()
