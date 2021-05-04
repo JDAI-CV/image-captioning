@@ -3,6 +3,7 @@ import torch
 from torchvision import transforms
 from lib.config import cfg
 from datasets.coco_dataset import CocoDataset
+from datasets.radiology_dataset import IUXRAY
 import samplers.distributed
 import numpy as np
 
@@ -59,13 +60,13 @@ def sample_collate_val(batch):
     return indices, gv_feat, att_feats, att_mask
 
 
-def load_train(distributed, epoch, coco_set):
-    sampler = samplers.distributed.DistributedSampler(coco_set, epoch=epoch) \
+def load_train(distributed, epoch, dataset):
+    sampler = samplers.distributed.DistributedSampler(dataset, epoch=epoch) \
         if distributed else None
     shuffle = cfg.DATA_LOADER.SHUFFLE if sampler is None else False
     
     loader = torch.utils.data.DataLoader(
-        coco_set, 
+        dataset,
         batch_size = cfg.TRAIN.BATCH_SIZE,
         shuffle = shuffle, 
         num_workers = cfg.DATA_LOADER.NUM_WORKERS, 
@@ -76,19 +77,21 @@ def load_train(distributed, epoch, coco_set):
     )
     return loader
 
-def load_val(image_ids_path, gv_feat_path, att_feats_folder):
-    coco_set = CocoDataset(
-        image_ids_path = image_ids_path, 
-        input_seq = None, 
-        target_seq = None, 
-        gv_feat_path = gv_feat_path, 
-        att_feats_folder = att_feats_folder,
-        seq_per_img = 1, 
-        max_feat_num = cfg.DATA_LOADER.MAX_FEAT
-    )
+def load_val(split = 'val'):
+    # coco_set = CocoDataset(
+    #     image_ids_path = image_ids_path,
+    #     input_seq = None,
+    #     target_seq = None,
+    #     gv_feat_path = gv_feat_path,
+    #     att_feats_folder = att_feats_folder,
+    #     seq_per_img = 1,
+    #     max_feat_num = cfg.DATA_LOADER.MAX_FEAT
+    # )
+
+    dataset = IUXRAY(split = split)
 
     loader = torch.utils.data.DataLoader(
-        coco_set, 
+        dataset,
         batch_size = cfg.TEST.BATCH_SIZE,
         shuffle = False, 
         num_workers = cfg.DATA_LOADER.NUM_WORKERS, 

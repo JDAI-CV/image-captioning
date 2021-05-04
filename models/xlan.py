@@ -51,7 +51,7 @@ class XLAN(AttBasicModel):
         att, _ = self.attention(h_att, att_feats, att_mask, p_att_feats, precompute=True)
         ctx_input = torch.cat([att, h_att], 1)
 
-        output = self.att2ctx(ctx_input)
+        output = self.att2ctx(ctx_input)    # forward entry
         state = [torch.stack((h_att, output)), torch.stack((c_att, state[1][1]))]
 
         return output, state

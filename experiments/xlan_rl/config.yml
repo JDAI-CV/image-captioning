@@ -39,8 +39,8 @@ DATA_LOADER:
 ############################ MODEL ############################
 MODEL:
   TYPE: 'XLAN'
-  SEQ_LEN: 17                               # include <EOS>/<BOS>
-  VOCAB_SIZE: 9487                          # exclude <EOS>/<BOS>
+  SEQ_LEN: 60   # Modified                                # include <EOS>/<BOS>
+  VOCAB_SIZE: 9487    # TODO                      # exclude <EOS>/<BOS>
   ########## word embedding ##########
   WORD_EMBED_DIM: 1024
   WORD_EMBED_ACT: 'CELU'
@@ -52,7 +52,7 @@ MODEL:
   GVFEAT_EMBED_ACT: 'NONE'
   DROPOUT_GV_EMBED: 0.0
   ########## attention features ##########
-  ATT_FEATS_DIM: 2048
+  ATT_FEATS_DIM: 1024   # Modified
   ATT_FEATS_EMBED_DIM: 1024
   ATT_FEATS_EMBED_ACT: 'CELU'               # 'RELU', 'NONE'
   DROPOUT_ATT_EMBED: 0.5

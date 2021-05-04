@@ -16,6 +16,7 @@ import torch.distributed as dist
 import losses
 import models
 import datasets
+from datasets.radiology_dataset import IUXRAY
 import lib.utils as utils
 from lib.utils import AverageMeter
 from optimizer.optimizer import Optimizer
@@ -46,16 +47,10 @@ class Trainer(object):
         self.setup_dataset()
         self.setup_network()
         self.val_evaler = Evaler(
-            eval_ids = cfg.DATA_LOADER.VAL_ID,
-            gv_feat = cfg.DATA_LOADER.VAL_GV_FEAT,
-            att_feats = cfg.DATA_LOADER.VAL_ATT_FEATS,
-            eval_annfile = cfg.INFERENCE.VAL_ANNFILE
+            split = 'val'
         )
         self.test_evaler = Evaler(
-            eval_ids = cfg.DATA_LOADER.TEST_ID,
-            gv_feat = cfg.DATA_LOADER.TEST_GV_FEAT,
-            att_feats = cfg.DATA_LOADER.TEST_ATT_FEATS,
-            eval_annfile = cfg.INFERENCE.TEST_ANNFILE
+            split = 'test'
         )
         self.scorer = Scorer()
 
@@ -106,20 +101,25 @@ class Trainer(object):
         self.xe_criterion = losses.create(cfg.LOSSES.XE_TYPE).cuda()
         self.rl_criterion = losses.create(cfg.LOSSES.RL_TYPE).cuda()
         
-    def setup_dataset(self):
-        self.coco_set = datasets.coco_dataset.CocoDataset(            
-            image_ids_path = cfg.DATA_LOADER.TRAIN_ID, 
-            input_seq = cfg.DATA_LOADER.INPUT_SEQ_PATH, 
-            target_seq = cfg.DATA_LOADER.TARGET_SEQ_PATH,
-            gv_feat_path = cfg.DATA_LOADER.TRAIN_GV_FEAT, 
-            att_feats_folder = cfg.DATA_LOADER.TRAIN_ATT_FEATS, 
-            seq_per_img = cfg.DATA_LOADER.SEQ_PER_IMG,
-            max_feat_num = cfg.DATA_LOADER.MAX_FEAT
-        )
+    def setup_dataset(self, dataset = 'IUXRAY'):
+        if dataset == 'IUXRAY':
+            self.dataset = IUXRAY(
+                split = 'train'
+            )
+        # self.coco_set = datasets.coco_dataset.CocoDataset(
+        #     image_ids_path = cfg.DATA_LOADER.TRAIN_ID,
+        #     input_seq = cfg.DATA_LOADER.INPUT_SEQ_PATH,
+        #     target_seq = cfg.DATA_LOADER.TARGET_SEQ_PATH,
+        #     gv_feat_path = cfg.DATA_LOADER.TRAIN_GV_FEAT,
+        #     att_feats_folder = cfg.DATA_LOADER.TRAIN_ATT_FEATS,
+        #     seq_per_img = cfg.DATA_LOADER.SEQ_PER_IMG,
+        #     max_feat_num = cfg.DATA_LOADER.MAX_FEAT
+        # )
+
 
     def setup_loader(self, epoch):
         self.training_loader = datasets.data_loader.load_train(
-            self.distributed, epoch, self.coco_set)
+            self.distributed, epoch, self.dataset)
 
     def eval(self, epoch):
         if (epoch + 1) % cfg.SOLVER.TEST_INTERVAL != 0:

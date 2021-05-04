@@ -12,6 +12,7 @@ import blocks
 import lib.utils as utils
 from models.basic_model import BasicModel
 from layers.positional_encoding import PositionalEncoding
+from .pretrained_models import ImageClassification
 
 def subsequent_mask(size):
     "Mask out subsequent positions."
@@ -23,15 +24,19 @@ class XTransformer(BasicModel):
     def __init__(self):
         super(XTransformer, self).__init__()
         self.vocab_size = cfg.MODEL.VOCAB_SIZE + 1
-
+        # image pretrained
+        self.image_pretrained_models, self.input_visual_feats = ImageClassification.image_features(
+            'densenet', fixed_weight=False,pretrained_model=cfg.MODEL.PretrainedImageModel)
         # att_feats encoder
         sequential = []
-        sequential.append(nn.Linear(cfg.MODEL.ATT_FEATS_DIM, cfg.MODEL.ATT_FEATS_EMBED_DIM))
+        sequential.append(nn.Linear(self.input_visual_feats, cfg.MODEL.ATT_FEATS_EMBED_DIM))
         sequential.append(utils.activation(cfg.MODEL.ATT_FEATS_EMBED_ACT))
         if cfg.MODEL.ATT_FEATS_NORM == True:
             sequential.append(nn.LayerNorm(cfg.MODEL.ATT_FEATS_EMBED_DIM))
         if cfg.MODEL.DROPOUT_ATT_EMBED > 0:
-            sequential.append(nn.Dropout(cfg.MODEL.DROPOUT_ATT_EMBED))    
+            sequential.append(nn.Dropout(cfg.MODEL.DROPOUT_ATT_EMBED))
+
+
         self.att_embed = nn.Sequential(*sequential) if len(sequential) > 0 else None
 
         self.encoder = Encoder(
@@ -60,6 +65,7 @@ class XTransformer(BasicModel):
             layer_num = cfg.MODEL.BILINEAR.DECODE_LAYERS)
 
     def forward(self, **kwargs):
+        # forward entry
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
         seq = kwargs[cfg.PARAM.INPUT_SENT]
         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
@@ -73,8 +79,12 @@ class XTransformer(BasicModel):
         seq_mask = seq_mask & subsequent_mask(seq.size(-1)).to(seq_mask)
         seq_mask = seq_mask.type(torch.cuda.FloatTensor)
         ##############################################
+        print('att_feats.shape b4 pretrain',att_feats.shape)
+        att_feats = self.image_pretrained_models(att_feats)
+        print('att_feats.shape after pretrain', att_feats.shape)
+        raise Exception('TODO')
 
-        att_feats = self.att_embed(att_feats)
+        att_feats = self.att_embed(att_feats) # forward entry
         gx, encoder_out = self.encoder(att_feats, att_mask)
         decoder_out = self.decoder(gx, seq, encoder_out, att_mask, seq_mask)
         return decoder_out

@@ -12,16 +12,13 @@ from lib.config import cfg
 class Evaler(object):
     def __init__(
         self,
-        eval_ids,
-        gv_feat,
-        att_feats,
-        eval_annfile
+        split = 'val'
     ):
         super(Evaler, self).__init__()
         self.vocab = utils.load_vocab(cfg.INFERENCE.VOCAB)
 
         self.eval_ids = np.array(utils.load_ids(eval_ids))
-        self.eval_loader = data_loader.load_val(eval_ids, gv_feat, att_feats)
+        self.eval_loader = data_loader.load_val(split = split)
         self.evaler = evaluation.create(cfg.INFERENCE.EVAL, eval_annfile)
 
     def make_kwargs(self, indices, ids, gv_feat, att_feats, att_mask):

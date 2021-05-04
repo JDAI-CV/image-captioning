@@ -85,15 +85,17 @@ __C.DATA_LOADER.MAX_FEAT = -1
 # ---------------------------------------------------------------------------- #
 # Model options
 # ---------------------------------------------------------------------------- #
+__C.MODEL.PretrainedImageModel = '/content/model4dict.lol' # TODO # Modified
+
 __C.MODEL = edict()
 
 __C.MODEL.TYPE = 'UpDown'               # 'UpDown', 'XLAN', 'XTransformer'
 
-__C.MODEL.SEQ_LEN = 17                  # include <EOS>/<BOS>
+__C.MODEL.SEQ_LEN = 60                  # include <EOS>/<BOS> # modified
 
-__C.MODEL.VOCAB_SIZE = 9487             # exclude <EOS>/<BOS>
+__C.MODEL.VOCAB_SIZE = 9487             # exclude <EOS>/<BOS> # TODO
 
-__C.MODEL.WORD_EMBED_DIM = 1000
+__C.MODEL.WORD_EMBED_DIM = 512         # TODO # Modified
 
 __C.MODEL.WORD_EMBED_ACT = 'NONE'       # 'RELU', 'CELU', 'NONE'
 
@@ -101,7 +103,7 @@ __C.MODEL.WORD_EMBED_NORM = False
 
 __C.MODEL.DROPOUT_WORD_EMBED = 0.0
 
-__C.MODEL.GVFEAT_DIM = 2048
+__C.MODEL.GVFEAT_DIM = 2048 # TODO
 
 __C.MODEL.GVFEAT_EMBED_DIM = -1
 
@@ -109,7 +111,7 @@ __C.MODEL.GVFEAT_EMBED_ACT = 'NONE'     # 'RELU', 'CELU', 'NONE'
 
 __C.MODEL.DROPOUT_GV_EMBED = 0.0
 
-__C.MODEL.ATT_FEATS_DIM = 2048
+__C.MODEL.ATT_FEATS_DIM = 1024  # Not used. Modified on the init stage of model
 
 __C.MODEL.ATT_FEATS_EMBED_DIM = -1
 
@@ -119,13 +121,13 @@ __C.MODEL.DROPOUT_ATT_EMBED = 0.0
 
 __C.MODEL.ATT_FEATS_NORM = False
 
-__C.MODEL.ATT_HIDDEN_SIZE = 512
+__C.MODEL.ATT_HIDDEN_SIZE = 512 # TODO
 
 __C.MODEL.ATT_HIDDEN_DROP = 0.0
 
 __C.MODEL.ATT_ACT = 'RELU'  # 'RELU', 'CELU', 'TANH'
 
-__C.MODEL.RNN_SIZE = 1000
+__C.MODEL.RNN_SIZE = 1000 # TODO
 
 __C.MODEL.DROPOUT_LM = 0.5
 
