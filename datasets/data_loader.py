@@ -9,64 +9,68 @@ import numpy as np
 
 def sample_collate(batch):
     indices, input_seq, target_seq, gv_feat, att_feats = zip(*batch)
-    # max_seq_length = max([len(x) for x in input_seq])
+
+    max_seq_length = max([len(x) for x in input_seq])
+    input_seqs = np.zeros((len(input_seq), max_seq_length), dtype=int)
+    target_seqs = np.zeros((len(target_seq), max_seq_length), dtype=int)
     # print(max_seq_length)
-    # raise Exception('lol')
+
+    for i, input in enumerate(input_seq):
+        input_seqs[i, :len(input)] = input
+
+    for i, target in enumerate(target_seq):
+        target_seqs[i, :len(target)] = target
+
     indices = np.stack(indices, axis=0).reshape(-1)
-    input_seq = torch.cat([torch.from_numpy(b) for b in input_seq], 0)
-    target_seq = torch.cat([torch.from_numpy(b) for b in target_seq], 0)
+
     gv_feat = torch.cat([torch.from_numpy(b) for b in gv_feat], 0)
 
+    mask_arr = torch.ones([len(att_feats), 49]).float() # hard code 49
 
-
-    # atts_num = [x.shape[0] for x in att_feats]
-    # max_att_num = np.max(atts_num)
-
-    # feat_arr = []
-    # mask_arr = []
-    # for i, num in enumerate(atts_num):
-    #     tmp_feat = np.zeros((1, max_att_num, att_feats[i].shape[1]), dtype=np.float32)
-    #     tmp_feat[:, 0:att_feats[i].shape[0], :] = att_feats[i]
-    #     feat_arr.append(torch.from_numpy(tmp_feat))
-
-        # tmp_mask = np.zeros((1, 3), dtype=np.float32)
-        # tmp_mask[:, 0:num] = 1
-        # mask_arr.append(torch.from_numpy(tmp_mask))
-
-
-    mask_arr = torch.from_numpy(np.ones((len(att_feats), 1, 3), dtype=np.float32))
-    # att_feats = torch.cat(feat_arr, 0)
-
-    att_mask = torch.cat(mask_arr, 0)
+    att_mask = torch.cat([mask_arr], 0)
     att_feats = torch.stack(att_feats, 0)
-    return indices, input_seq, target_seq, gv_feat, att_feats, att_mask
+    """
+    indices (40, )
+    input_seq (40, 60)
+    target_seq (40, 60)
+    gv_feat (40, 1)
+    att_feats (40, 2, 3, 224, 224) 
+    att_mask (40, 1, 3) => (40, 49)
+    """
+    return indices, torch.LongTensor(input_seqs), torch.LongTensor(target_seqs), gv_feat, att_feats, att_mask
 
 def sample_collate_val(batch):
-    # indices, input_sequence, target_sequence, gv_feat, image
+
     indices, input_seq, target_seq, gv_feat, att_feats = zip(*batch)
-    # indices, gv_feat, att_feats = zip(*batch)
-    
+
+    max_seq_length = max([len(x) for x in input_seq])
+    input_seqs = np.zeros((len(input_seq), max_seq_length), dtype=int)
+    target_seqs = np.zeros((len(target_seq), max_seq_length), dtype=int)
+    # print(max_seq_length)
+
+    for i, input in enumerate(input_seq):
+        input_seqs[i, :len(input)] = input
+
+    for i, target in enumerate(target_seq):
+        target_seqs[i, :len(target)] = target
+
     indices = np.stack(indices, axis=0).reshape(-1)
+
     gv_feat = torch.cat([torch.from_numpy(b) for b in gv_feat], 0)
 
-    atts_num = [x.shape[0] for x in att_feats]
-    max_att_num = np.max(atts_num)
+    mask_arr = torch.ones([len(att_feats), 49]).float() # hard code 49
 
-    feat_arr = []
-    mask_arr = []
-    for i, num in enumerate(atts_num):
-        tmp_feat = np.zeros((1, max_att_num, att_feats[i].shape[1]), dtype=np.float32)
-        tmp_feat[:, 0:att_feats[i].shape[0], :] = att_feats[i]
-        feat_arr.append(torch.from_numpy(tmp_feat))
-
-        tmp_mask = np.zeros((1, max_att_num), dtype=np.float32)
-        tmp_mask[:, 0:num] = 1
-        mask_arr.append(torch.from_numpy(tmp_mask))
-
-    att_feats = torch.cat(feat_arr, 0)
-    att_mask = torch.cat(mask_arr, 0)
-
-    return indices, target_seq, gv_feat, att_feats, att_mask
+    att_mask = torch.cat([mask_arr], 0)
+    att_feats = torch.stack(att_feats, 0)
+    """
+    indices (40, )
+    input_seq (40, 60)
+    target_seq (40, 60)
+    gv_feat (40, 1)
+    att_feats (40, 2, 3, 224, 224) 
+    att_mask (40, 1, 3) => (40, 49)
+    """
+    return indices, torch.LongTensor(target_seqs), gv_feat, att_feats, att_mask
 
 
 def load_train(distributed, epoch, dataset):
@@ -77,11 +81,11 @@ def load_train(distributed, epoch, dataset):
     loader = torch.utils.data.DataLoader(
         dataset,
         batch_size = cfg.TRAIN.BATCH_SIZE,
-        shuffle = shuffle, 
-        num_workers = cfg.DATA_LOADER.NUM_WORKERS, 
-        drop_last = cfg.DATA_LOADER.DROP_LAST, 
+        shuffle = shuffle,
+        num_workers = cfg.DATA_LOADER.NUM_WORKERS,
+        drop_last = cfg.DATA_LOADER.DROP_LAST,
         pin_memory = cfg.DATA_LOADER.PIN_MEMORY,
-        sampler = sampler, 
+        sampler = sampler,
         collate_fn = sample_collate
     )
     return loader
@@ -100,10 +104,10 @@ def load_val(dataset):
     loader = torch.utils.data.DataLoader(
         dataset,
         batch_size = cfg.TEST.BATCH_SIZE,
-        shuffle = False, 
-        num_workers = cfg.DATA_LOADER.NUM_WORKERS, 
-        drop_last = False, 
-        pin_memory = cfg.DATA_LOADER.PIN_MEMORY, 
+        shuffle = False,
+        num_workers = cfg.DATA_LOADER.NUM_WORKERS,
+        drop_last = False,
+        pin_memory = cfg.DATA_LOADER.PIN_MEMORY,
         collate_fn = sample_collate_val
     )
     return loader

@@ -3,14 +3,14 @@ SEED: 1546884941.160048
 
 ############################ TRAIN ############################
 TRAIN:
-  BATCH_SIZE: 40
+  BATCH_SIZE: 12
   #################### REINFORCEMENT ####################
   REINFORCEMENT:
     START: 9999
 
-############################ TEST ############################  
+############################ TEST ############################
 TEST:
-  BATCH_SIZE: 36
+  BATCH_SIZE: 12
 
 ############################ DATA_LOADER ############################
 DATA_LOADER:
@@ -27,7 +27,7 @@ DATA_LOADER:
   TEST_ID: './mscoco/txt/coco_test_image_id.txt'
   INPUT_SEQ_PATH: './mscoco/sent/coco_train_input.pkl'
   TARGET_SEQ_PATH: './mscoco/sent/coco_train_target.pkl'
-  SEQ_PER_IMG: 5
+  SEQ_PER_IMG: 1
   MAX_FEAT: 50
 
 ############################ MODEL ############################
@@ -38,7 +38,7 @@ MODEL:
   ########## word embedding ##########
   WORD_EMBED_DIM: 768
   WORD_EMBED_ACT: 'CELU'
-  WORD_EMBED_NORM: False                   
+  WORD_EMBED_NORM: False
   DROPOUT_WORD_EMBED: 0.1
   ########## global features ##########
   GVFEAT_DIM: 2048
@@ -75,8 +75,8 @@ MODEL:
     ACT: 'CELU'
     ENCODE_DROPOUT: 0.5
     DECODE_DROPOUT: 0.5
-    ENCODE_LAYERS: 6
-    DECODE_LAYERS: 6
+    ENCODE_LAYERS: 3
+    DECODE_LAYERS: 3
     TYPE: 'LowRank'
     ATTTYPE: 'SCAtt' # SCAtt, BasicAtt
     HEAD: 8
@@ -87,9 +87,9 @@ MODEL:
     ENCODE_BIFEAT_EMB_DROPOUT: 0.3
     DECODE_BIFEAT_EMB_DROPOUT: 0.3
 
-############################ SOLVER ############################  
+############################ SOLVER ############################
 SOLVER:
-  BASE_LR: 0.0005
+  BASE_LR: 0.0001
   TYPE: 'RADAM'                 # 'ADAM', 'SGD', 'RADAM'
   MAX_EPOCH: 70
   MAX_ITER: -1

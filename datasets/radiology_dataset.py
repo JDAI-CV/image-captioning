@@ -56,8 +56,8 @@ class IUXRAY(BaseDataset):
 
         report_ids = np.array(example['ids'])
 
-        input_sequence = np.ones(self.max_seq_length, dtype='int') * -1
-        target_sequence = np.ones(self.max_seq_length, dtype='int') * -1
+        input_sequence = np.zeros(self.max_seq_length, dtype='int')
+        target_sequence = np.zeros(self.max_seq_length, dtype='int')
 
         input_sequence[:len(report_ids)] = report_ids
         target_sequence[:len(report_ids)-1] = report_ids[1:]
@@ -80,8 +80,8 @@ class MimiccxrSingleImageDataset(BaseDataset): # MimiccxrSingleImageDataset
             image = self.transform(image)
         report_ids = np.array(example['ids'])
 
-        input_sequence = np.ones(self.max_seq_length, dtype='int') * -1
-        target_sequence = np.ones(self.max_seq_length, dtype='int') * -1
+        input_sequence = np.ones(self.max_seq_length, dtype='int')
+        target_sequence = np.ones(self.max_seq_length, dtype='int')
 
         input_sequence[:len(report_ids)] = report_ids
         target_sequence[:len(report_ids) - 1] = report_ids[1:]

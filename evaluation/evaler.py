@@ -14,6 +14,7 @@ from pycocoevalcap.meteor import Meteor
 from pycocoevalcap.rouge import Rouge
 from scorer.cider import Cider
 
+
 def compute_scores(gts, res):
     """
     Performs the MS COCO evaluation using the Python 3 implementation (https://github.com/salaniz/pycocoevalcap)
@@ -44,11 +45,12 @@ def compute_scores(gts, res):
             eval_res[method] = score
     return eval_res
 
+
 class Evaler(object):
     def __init__(
-        self,
-        dataset,
-        tokenizer
+            self,
+            dataset,
+            tokenizer
     ):
         super(Evaler, self).__init__()
         self.tokenizer = tokenizer
@@ -68,10 +70,10 @@ class Evaler(object):
         kwargs['BEAM_SIZE'] = cfg.INFERENCE.BEAM_SIZE
         kwargs['GREEDY_DECODE'] = cfg.INFERENCE.GREEDY_DECODE
         return kwargs
-        
+
     def __call__(self, model, rname):
         model.eval()
-        
+
         results = []
         golden_sents = []
         with torch.no_grad():
@@ -82,12 +84,13 @@ class Evaler(object):
                 att_mask = att_mask.cuda()
                 kwargs = self.make_kwargs(indices, ids, gv_feat, att_feats, att_mask)
                 if kwargs['BEAM_SIZE'] > 1:
-                    seq, _ = model.module.decode_beam(**kwargs)
+                    seq, _ = model.decode_beam(**kwargs)  # modified
                 else:
-                    seq, _ = model.module.decode(**kwargs)
-                sents = utils.decode_sequence(self.tokenizer.decode, seq.data) # to check
+                    seq, _ = model.decode(**kwargs)
+                sents = utils.decode_sequence(self.tokenizer.decode, seq.data)  # to check
 
-                gold_sents = utils.decode_sequence(self.tokenizer.decode, target_seq.data) # to check target_seq callable
+                gold_sents = utils.decode_sequence(self.tokenizer.decode,
+                                                   target_seq.data)  # to check target_seq callable
 
                 for sid, sent in enumerate(sents):
                     result = {ids[sid]: sent}
@@ -96,12 +99,13 @@ class Evaler(object):
                     g_sents = {ids[sid]: sent}
                     golden_sents.append(g_sents)
 
-        eval_res = self.evaler(gts = golden_sents, res = results)
+        eval_res = self.evaler(gts=golden_sents, res=results)
 
         result_folder = os.path.join(cfg.ROOT_DIR, 'result')
         if not os.path.exists(result_folder):
             os.mkdir(result_folder)
-        json.dump(results, open(os.path.join(result_folder, 'result_' + rname +'.json'), 'w')) # store the generated sentences
+        json.dump(results,
+                  open(os.path.join(result_folder, 'result_' + rname + '.json'), 'w'))  # store the generated sentences
 
         model.train()
         return eval_res

@@ -25,6 +25,7 @@ from evaluation.evaler import Evaler
 from scorer.scorer import Scorer
 from lib.config import cfg, cfg_from_file
 
+
 class Trainer(object):
     def __init__(self, args):
         super(Trainer, self).__init__()
@@ -42,6 +43,7 @@ class Trainer(object):
                 backend="nccl", init_method="env://"
             )
         self.device = torch.device("cuda")
+        # self.device = 'cpu'
 
         self.rl_stage = False
         self.setup_logging()
@@ -54,8 +56,8 @@ class Trainer(object):
                 tokenizer=self.tokenizer,
                 split='val'
             ),
-            tokenizer = self.tokenizer
-        ) # TODO
+            tokenizer=self.tokenizer
+        )  # TODO
         self.test_evaler = Evaler(
             IUXRAY(
                 image_dir=args.image_dir,
@@ -63,8 +65,8 @@ class Trainer(object):
                 tokenizer=self.tokenizer,
                 split='test'
             ),
-            tokenizer = self.tokenizer
-        ) # TODO
+            tokenizer=self.tokenizer
+        )  # TODO
         self.scorer = Scorer()
 
     def setup_logging(self):
@@ -72,7 +74,7 @@ class Trainer(object):
         self.logger.setLevel(logging.INFO)
         if self.distributed and dist.get_rank() > 0:
             return
-        
+
         ch = logging.StreamHandler(stream=sys.stdout)
         ch.setLevel(logging.INFO)
         formatter = logging.Formatter("[%(levelname)s: %(asctime)s] %(message)s")
@@ -81,12 +83,12 @@ class Trainer(object):
 
         if not os.path.exists(cfg.ROOT_DIR):
             os.makedirs(cfg.ROOT_DIR)
-        
+
         fh = logging.FileHandler(os.path.join(cfg.ROOT_DIR, cfg.LOGGER_NAME + '.txt'))
         fh.setLevel(logging.INFO)
         fh.setFormatter(formatter)
         self.logger.addHandler(fh)
-        
+
         self.logger.info('Training with config:')
         self.logger.info(pprint.pformat(cfg))
 
@@ -96,10 +98,10 @@ class Trainer(object):
         if self.distributed:
             # this should be removed if we update BatchNorm stats
             self.model = torch.nn.parallel.DistributedDataParallel(
-                model.to(self.device), 
-                device_ids = [self.args.local_rank], 
-                output_device = self.args.local_rank,
-                broadcast_buffers = False
+                model.to(self.device),
+                device_ids=[self.args.local_rank],
+                output_device=self.args.local_rank,
+                broadcast_buffers=False
             )
         else:
             # self.model = torch.nn.DataParallel(model).cuda() # strange
@@ -108,21 +110,21 @@ class Trainer(object):
         if self.args.resume > 0:
             self.model.load_state_dict(
                 torch.load(self.snapshot_path("caption_model", self.args.resume),
-                    map_location=lambda storage, loc: storage)
+                           map_location=lambda storage, loc: storage)
             )
 
         self.optim = Optimizer(self.model)
         self.xe_criterion = losses.create(cfg.LOSSES.XE_TYPE).cuda()
         self.rl_criterion = losses.create(cfg.LOSSES.RL_TYPE).cuda()
-        
-    def setup_dataset(self, dataset = 'IUXRAY'):
-        self.tokenizer = Tokenizer(ann_path = args.ann_path,dataset_name = args.dataset_name)
+
+    def setup_dataset(self, dataset='IUXRAY'):
+        self.tokenizer = Tokenizer(ann_path=args.ann_path, dataset_name=args.dataset_name)
         if dataset == 'IUXRAY':
             self.dataset = IUXRAY(
-                image_dir = args.image_dir,
-                ann_path = args.ann_path,
-                tokenizer = self.tokenizer,
-                split = 'train'
+                image_dir=args.image_dir,
+                ann_path=args.ann_path,
+                tokenizer=self.tokenizer,
+                split='train'
             )
         # self.coco_set = datasets.coco_dataset.CocoDataset(
         #     image_ids_path = cfg.DATA_LOADER.TRAIN_ID,
@@ -134,7 +136,6 @@ class Trainer(object):
         #     max_feat_num = cfg.DATA_LOADER.MAX_FEAT
         # )
 
-
     def setup_loader(self, epoch):
         self.training_loader = datasets.data_loader.load_train(
             self.distributed, epoch, self.dataset)
@@ -144,12 +145,12 @@ class Trainer(object):
             return None
         if self.distributed and dist.get_rank() > 0:
             return None
-            
+
         val_res = self.val_evaler(self.model, 'val_' + str(epoch + 1))
         self.logger.info('######## Epoch (VAL)' + str(epoch + 1) + ' ########')
         self.logger.info(str(val_res))
 
-        test_res = self.test_evaler(self.model,'test_' + str(epoch + 1))
+        test_res = self.test_evaler(self.model, 'test_' + str(epoch + 1))
         self.logger.info('######## Epoch (TEST)' + str(epoch + 1) + ' ########')
         self.logger.info(str(test_res))
 
@@ -170,11 +171,12 @@ class Trainer(object):
         snapshot_folder = os.path.join(cfg.ROOT_DIR, 'snapshot')
         if not os.path.exists(snapshot_folder):
             os.mkdir(snapshot_folder)
-        torch.save(self.model.state_dict(), self.snapshot_path("caption_model", epoch+1))
+        torch.save(self.model.state_dict(), self.snapshot_path("caption_model", epoch + 1))
 
     def make_kwargs(self, indices, input_seq, target_seq, gv_feat, att_feats, att_mask):
         seq_mask = (input_seq > 0).type(torch.cuda.LongTensor)
-        seq_mask[:,0] += 1
+        # print(seq_mask)
+        seq_mask[:, 0] += 1
         seq_mask_sum = seq_mask.sum(-1)
         max_len = int(seq_mask_sum.max())
         input_seq = input_seq[:, 0:max_len].contiguous()
@@ -202,7 +204,7 @@ class Trainer(object):
         if self.distributed and dist.get_rank() > 0:
             return
         info_str = ' (DataTime/BatchTime: {:.3}/{:.3}) losses = {:.5}'.format(data_time.avg, batch_time.avg, losses.avg)
-        self.logger.info('Iteration ' + str(iteration) + info_str +', lr = ' +  str(self.optim.get_lr()))
+        self.logger.info('Iteration ' + str(iteration) + info_str + ', lr = ' + str(self.optim.get_lr()))
         for name in sorted(loss_info):
             self.logger.info('  ' + name + ' = ' + str(loss_info[name]))
         data_time.reset()
@@ -231,10 +233,10 @@ class Trainer(object):
             with torch.no_grad():
                 seq_max, logP_max = self.model.module.decode(**kwargs)
             self.model.train()
-            rewards_max, rewards_info_max = self.scorer(target_seq, seq_max.data.cpu().numpy().tolist()) # Modified
+            rewards_max, rewards_info_max = self.scorer(target_seq, seq_max.data.cpu().numpy().tolist())  # Modified
             rewards_max = utils.expand_numpy(rewards_max)
 
-            ids = utils.expand_numpy(ids) # to check?
+            ids = utils.expand_numpy(ids)  # to check?
             gv_feat = utils.expand_tensor(gv_feat, cfg.DATA_LOADER.SEQ_PER_IMG)
             att_feats = utils.expand_tensor(att_feats, cfg.DATA_LOADER.SEQ_PER_IMG)
             att_mask = utils.expand_tensor(att_mask, cfg.DATA_LOADER.SEQ_PER_IMG)
@@ -247,12 +249,13 @@ class Trainer(object):
             kwargs[cfg.PARAM.ATT_FEATS_MASK] = att_mask
 
             seq_sample, logP_sample = self.model.module.decode(**kwargs)
-            rewards_sample, rewards_info_sample = self.scorer(target_seq, seq_sample.data.cpu().numpy().tolist()) # Modified
+            rewards_sample, rewards_info_sample = self.scorer(target_seq,
+                                                              seq_sample.data.cpu().numpy().tolist())  # Modified
 
             rewards = rewards_sample - rewards_max
             rewards = torch.from_numpy(rewards).float().cuda()
             loss = self.rl_criterion(seq_sample, logP_sample, rewards)
-            
+
             loss_info = {}
             for key in rewards_info_sample:
                 loss_info[key + '_sample'] = rewards_info_sample[key]
@@ -266,7 +269,7 @@ class Trainer(object):
         self.optim.zero_grad()
 
         iteration = 0
-        for epoch in  range(cfg.SOLVER.MAX_EPOCH):
+        for epoch in range(cfg.SOLVER.MAX_EPOCH):
             if epoch == cfg.TRAIN.REINFORCEMENT.START:
                 self.rl_stage = True
             self.setup_loader(epoch)
@@ -288,11 +291,11 @@ class Trainer(object):
                 loss, loss_info = self.forward(kwargs)
                 loss.backward()
                 utils.clip_gradient(self.optim.optimizer, self.model,
-                    cfg.SOLVER.GRAD_CLIP_TYPE, cfg.SOLVER.GRAD_CLIP)
+                                    cfg.SOLVER.GRAD_CLIP_TYPE, cfg.SOLVER.GRAD_CLIP)
                 self.optim.step()
                 self.optim.zero_grad()
                 self.optim.scheduler_step('Iter')
-                
+
                 batch_time.update(time.time() - start)
                 start = time.time()
                 losses.update(loss.item())
@@ -301,7 +304,7 @@ class Trainer(object):
 
                 if self.distributed:
                     dist.barrier()
-        
+
             self.save_model(epoch)
             val = self.eval(epoch)
             self.optim.scheduler_step('Epoch', val)
@@ -309,6 +312,7 @@ class Trainer(object):
 
             if self.distributed:
                 dist.barrier()
+
 
 def parse_args():
     """
@@ -318,9 +322,12 @@ def parse_args():
     parser.add_argument('--folder', dest='folder', type=str, default=None)
     parser.add_argument("--local_rank", type=int, default=0)
     parser.add_argument("--resume", type=int, default=-1)
-    parser.add_argument('--image_dir', type=str, default='/content/iu_xray_resized/images/', help='the path to the directory containing the data.')
-    parser.add_argument('--ann_path', type=str, default='/content/iu_xray_resized/annotation.json', help='the path to the directory containing the data.')
-    parser.add_argument('--dataset_name', type=str, default='iuxray', choices=['iuxray', 'mimiccxr'], help='the dataset to be used.')
+    parser.add_argument('--image_dir', type=str, default='/content/iu_xray_resized/images/',
+                        help='the path to the directory containing the data.')
+    parser.add_argument('--ann_path', type=str, default='/content/iu_xray_resized/annotation.json',
+                        help='the path to the directory containing the data.')
+    parser.add_argument('--dataset_name', type=str, default='iuxray', choices=['iuxray', 'mimiccxr'],
+                        help='the dataset to be used.')
 
     if len(sys.argv) == 1:
         parser.print_help()
@@ -328,6 +335,7 @@ def parse_args():
 
     args = parser.parse_args()
     return args
+
 
 if __name__ == '__main__':
     args = parse_args()
