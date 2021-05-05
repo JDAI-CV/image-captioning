@@ -42,7 +42,7 @@ class BaseDataset(Dataset):
 class IUXRAY(BaseDataset):
     def __getitem__(self, idx):
         # indices = np.array([idx]).astype('int') # Modified
-        image_id = self.examples[idx]['image_id']
+        image_id = self.examples[idx]['id']
         indices = np.array([image_id])
         example = self.examples[idx]
         image_path = example['image_path']
@@ -63,8 +63,8 @@ class IUXRAY(BaseDataset):
         target_sequence[:len(report_ids)-1] = report_ids[1:]
 
         gv_feat = np.zeros((1, 1)) # Never been used
-        report_masks = example['mask']
-        seq_length = len(report_ids)
+        # report_masks = example['mask']
+        # seq_length = len(report_ids)
         return indices, input_sequence, target_sequence, gv_feat, image
 
 
@@ -87,6 +87,6 @@ class MimiccxrSingleImageDataset(BaseDataset): # MimiccxrSingleImageDataset
         target_sequence[:len(report_ids) - 1] = report_ids[1:]
 
         gv_feat = np.zeros((1, 1))  # Never been used
-        report_masks = example['mask']
-        seq_length = len(report_ids)
+        # report_masks = example['mask']
+        # seq_length = len(report_ids)
         return indices, input_sequence, target_sequence, gv_feat, image

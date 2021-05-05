@@ -9,29 +9,36 @@ import numpy as np
 
 def sample_collate(batch):
     indices, input_seq, target_seq, gv_feat, att_feats = zip(*batch)
-    
+    # max_seq_length = max([len(x) for x in input_seq])
+    # print(max_seq_length)
+    # raise Exception('lol')
     indices = np.stack(indices, axis=0).reshape(-1)
     input_seq = torch.cat([torch.from_numpy(b) for b in input_seq], 0)
     target_seq = torch.cat([torch.from_numpy(b) for b in target_seq], 0)
     gv_feat = torch.cat([torch.from_numpy(b) for b in gv_feat], 0)
 
-    atts_num = [x.shape[0] for x in att_feats]
-    max_att_num = np.max(atts_num)
 
-    feat_arr = []
-    mask_arr = []
-    for i, num in enumerate(atts_num):
-        tmp_feat = np.zeros((1, max_att_num, att_feats[i].shape[1]), dtype=np.float32)
-        tmp_feat[:, 0:att_feats[i].shape[0], :] = att_feats[i]
-        feat_arr.append(torch.from_numpy(tmp_feat))
 
-        tmp_mask = np.zeros((1, max_att_num), dtype=np.float32)
-        tmp_mask[:, 0:num] = 1
-        mask_arr.append(torch.from_numpy(tmp_mask))
+    # atts_num = [x.shape[0] for x in att_feats]
+    # max_att_num = np.max(atts_num)
 
-    att_feats = torch.cat(feat_arr, 0)
+    # feat_arr = []
+    # mask_arr = []
+    # for i, num in enumerate(atts_num):
+    #     tmp_feat = np.zeros((1, max_att_num, att_feats[i].shape[1]), dtype=np.float32)
+    #     tmp_feat[:, 0:att_feats[i].shape[0], :] = att_feats[i]
+    #     feat_arr.append(torch.from_numpy(tmp_feat))
+
+        # tmp_mask = np.zeros((1, 3), dtype=np.float32)
+        # tmp_mask[:, 0:num] = 1
+        # mask_arr.append(torch.from_numpy(tmp_mask))
+
+
+    mask_arr = torch.from_numpy(np.ones((len(att_feats), 1, 3), dtype=np.float32))
+    # att_feats = torch.cat(feat_arr, 0)
+
     att_mask = torch.cat(mask_arr, 0)
-
+    att_feats = torch.stack(att_feats, 0)
     return indices, input_seq, target_seq, gv_feat, att_feats, att_mask
 
 def sample_collate_val(batch):
