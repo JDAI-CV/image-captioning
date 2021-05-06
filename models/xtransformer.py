@@ -23,7 +23,7 @@ def subsequent_mask(size):
 
 
 class XTransformer(BasicModel):
-    def __init__(self):
+    def __init__(self, args):
         super(XTransformer, self).__init__()
         self.vocab_size = cfg.MODEL.VOCAB_SIZE + 1
         # image pretrained
@@ -37,6 +37,8 @@ class XTransformer(BasicModel):
             sequential.append(nn.LayerNorm(cfg.MODEL.ATT_FEATS_EMBED_DIM))
         if cfg.MODEL.DROPOUT_ATT_EMBED > 0:
             sequential.append(nn.Dropout(cfg.MODEL.DROPOUT_ATT_EMBED))
+
+        self.get_visual_features = self.forward_iuxray if args.dataset_name == 'IUXRAY' else self.forward_mimiccxr
 
         self.att_embed = nn.Sequential(*sequential) if len(sequential) > 0 else None
 
@@ -90,9 +92,10 @@ class XTransformer(BasicModel):
         #   att_feats = att_feats.view(batch_size, -1, hidden_size1, hidden_size2)
 
         # FEED IUXRAY: two images
-        att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
-        att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
-        att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
+        # att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
+        # att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
+        # att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
+        att_feats = self.get_visual_features(att_feats)
         batch_size, feat_size, _, _ = att_feats.shape
         att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
         # print('att_feats.shape after pretrain', att_feats.shape)
@@ -103,6 +106,16 @@ class XTransformer(BasicModel):
         # print('decoder_out.shape',decoder_out.shape) # 4, 41, 761
         # raise Exception('lol')
         return decoder_out
+
+    def forward_iuxray(self, att_feats):
+        att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
+        att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
+        att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
+        return att_feats
+
+    def forward_mimiccxr(self, att_feats):
+        att_feats = self.image_pretrained_models(att_feats)
+        return att_feats
 
     def get_logprobs_state(self, **kwargs):
         wt = kwargs[cfg.PARAM.WT]
@@ -151,9 +164,7 @@ class XTransformer(BasicModel):
         seq_mask = torch.ones((batch_size, beam_size, 1)).cuda()
 
         # Modified
-        att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
-        att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
-        att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
+        att_feats = self.get_visual_features(att_feats)
         batch_size, feat_size, _, _ = att_feats.shape
         att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
 

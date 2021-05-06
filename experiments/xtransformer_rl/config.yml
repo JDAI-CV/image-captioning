@@ -89,7 +89,7 @@ MODEL:
 
 ############################ SOLVER ############################  
 SOLVER:
-  BASE_LR: 0.00001
+  BASE_LR: 0.000005
   TYPE: 'RADAM'                 # 'ADAM', 'SGD', 'ADAGRAD', 'RMSPROP'
   MAX_EPOCH: 60
   MAX_ITER: -1

@@ -50,7 +50,7 @@ class Trainer(object):
         self.setup_dataset()
         self.setup_network()
         self.val_evaler = Evaler(
-            IUXRAY(
+            datasets.create(name = args.dataset_name,
                 image_dir=args.image_dir,
                 ann_path=args.ann_path,
                 tokenizer=self.tokenizer,
@@ -59,12 +59,11 @@ class Trainer(object):
             tokenizer=self.tokenizer
         )  # TODO
         self.test_evaler = Evaler(
-            IUXRAY(
+            datasets.create(name = args.dataset_name,
                 image_dir=args.image_dir,
                 ann_path=args.ann_path,
                 tokenizer=self.tokenizer,
-                split='test'
-            ),
+                split='test'),
             tokenizer=self.tokenizer
         )  # TODO
         self.scorer = Scorer()
@@ -119,8 +118,7 @@ class Trainer(object):
 
     def setup_dataset(self, dataset='IUXRAY'):
         self.tokenizer = Tokenizer(ann_path=args.ann_path, dataset_name=args.dataset_name)
-        if dataset == 'IUXRAY':
-            self.dataset = IUXRAY(
+        self.dataset = datasets.create(name = args.dataset_name,
                 image_dir=args.image_dir,
                 ann_path=args.ann_path,
                 tokenizer=self.tokenizer,
@@ -326,7 +324,7 @@ def parse_args():
                         help='the path to the directory containing the data.')
     parser.add_argument('--ann_path', type=str, default='/content/iu_xray_resized/annotation.json',
                         help='the path to the directory containing the data.')
-    parser.add_argument('--dataset_name', type=str, default='iuxray', choices=['iuxray', 'mimiccxr'],
+    parser.add_argument('--dataset_name', type=str, default='IUXRAY', choices=['IUXRAY', 'MIMICCXR'],
                         help='the dataset to be used.')
 
     if len(sys.argv) == 1:

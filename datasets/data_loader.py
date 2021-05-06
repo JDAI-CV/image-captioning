@@ -28,7 +28,7 @@ def sample_collate(batch):
     mask_arr = torch.ones([len(att_feats), 49]).float() # hard code 49
 
     att_mask = torch.cat([mask_arr], 0)
-    att_feats = torch.stack(att_feats, 0)
+    att_feats = torch.stack(att_feats, 0) # TODO for mimic
     """
     indices (40, )
     input_seq (40, 60)

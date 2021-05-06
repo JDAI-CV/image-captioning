@@ -7,7 +7,7 @@ from models.att_basic_model import AttBasicModel
 import blocks
 
 class XLAN(AttBasicModel):
-    def __init__(self):
+    def __init__(self, args):
         super(XLAN, self).__init__()
         self.num_layers = 2
 
