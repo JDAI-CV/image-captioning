@@ -34,7 +34,7 @@ DATA_LOADER:
 MODEL:
   TYPE: 'XTransformer'
   SEQ_LEN: 60   # Modified                               # include <EOS>/<BOS>
-  VOCAB_SIZE: 760   # TODO                       # exclude <EOS>/<BOS> IUXRAY: 760
+  VOCAB_SIZE: 7863   # TODO                       # exclude <EOS>/<BOS> IUXRAY: 760
   ########## word embedding ##########
   WORD_EMBED_DIM: 768
   WORD_EMBED_ACT: 'CELU'

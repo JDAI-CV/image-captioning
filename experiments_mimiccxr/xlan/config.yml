@@ -40,7 +40,7 @@ DATA_LOADER:
 MODEL:
   TYPE: 'XLAN'
   SEQ_LEN: 60   # Modified                               # include <EOS>/<BOS>
-  VOCAB_SIZE: 9487   # TODO                          # exclude <EOS>/<BOS>
+  VOCAB_SIZE: 7863   # TODO                          # exclude <EOS>/<BOS>
   ########## word embedding ##########
   WORD_EMBED_DIM: 1024
   WORD_EMBED_ACT: 'CELU'
