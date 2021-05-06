@@ -92,7 +92,7 @@ class Trainer(object):
         self.logger.info(pprint.pformat(cfg))
 
     def setup_network(self):
-        model = models.create(cfg.MODEL.TYPE)
+        model = models.create(cfg.MODEL.TYPE, args)
 
         if self.distributed:
             # this should be removed if we update BatchNorm stats
@@ -116,7 +116,7 @@ class Trainer(object):
         self.xe_criterion = losses.create(cfg.LOSSES.XE_TYPE).cuda()
         self.rl_criterion = losses.create(cfg.LOSSES.RL_TYPE).cuda()
 
-    def setup_dataset(self, dataset='IUXRAY'):
+    def setup_dataset(self):
         self.tokenizer = Tokenizer(ann_path=args.ann_path, dataset_name=args.dataset_name)
         self.dataset = datasets.create(name = args.dataset_name,
                 image_dir=args.image_dir,

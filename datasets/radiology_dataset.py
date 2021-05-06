@@ -71,7 +71,7 @@ class IUXRAY(BaseDataset):
 class MIMICCXR(BaseDataset): # MimiccxrSingleImageDataset
     def __getitem__(self, idx):
         # indices = np.array([idx]).astype('int') # Modified
-        image_id = self.examples[idx]['image_id']
+        image_id = self.examples[idx]['id']
         indices = np.array([image_id])
         example = self.examples[idx]
         image_path = example['image_path']

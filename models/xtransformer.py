@@ -29,16 +29,21 @@ class XTransformer(BasicModel):
         # image pretrained
         self.image_pretrained_models, self.input_visual_feats = ImageClassification.image_features(
             'densenet', fixed_weight=False, pretrained_model=cfg.MODEL.PretrainedImageModel)
+        if args.dataset_name == 'IUXRAY':
+          num_images = 2
+          self.get_visual_features = self.forward_iuxray
+        else: # 'MIMICCXR'
+          num_images = 1
+          self.get_visual_features = self.forward_mimiccxr
+
         # att_feats encoder
         sequential = []
-        sequential.append(nn.Linear(self.input_visual_feats * 2, cfg.MODEL.ATT_FEATS_EMBED_DIM))
+        sequential.append(nn.Linear(self.input_visual_feats * num_images, cfg.MODEL.ATT_FEATS_EMBED_DIM))
         sequential.append(utils.activation(cfg.MODEL.ATT_FEATS_EMBED_ACT))
         if cfg.MODEL.ATT_FEATS_NORM == True:
             sequential.append(nn.LayerNorm(cfg.MODEL.ATT_FEATS_EMBED_DIM))
         if cfg.MODEL.DROPOUT_ATT_EMBED > 0:
             sequential.append(nn.Dropout(cfg.MODEL.DROPOUT_ATT_EMBED))
-
-        self.get_visual_features = self.forward_iuxray if args.dataset_name == 'IUXRAY' else self.forward_mimiccxr
 
         self.att_embed = nn.Sequential(*sequential) if len(sequential) > 0 else None
 
