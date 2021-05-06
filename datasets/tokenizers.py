@@ -73,6 +73,8 @@ class Tokenizer(object):
         report = ' . '.join(tokens) + ' .'
         return report
 
+    # def get_id2word(self):
+
     def get_token_by_id(self, id):
         return self.idx2token[id]
 

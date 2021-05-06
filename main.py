@@ -16,7 +16,7 @@ import torch.distributed as dist
 import losses
 import models
 import datasets
-from datasets.radiology_dataset import IUXRAY
+from datasets.radiology_dataset import IUXRAY, MIMICCXR
 from datasets.tokenizers import Tokenizer
 import lib.utils as utils
 from lib.utils import AverageMeter
@@ -196,7 +196,7 @@ class Trainer(object):
         if epoch > cfg.TRAIN.SCHEDULED_SAMPLING.START:
             frac = (epoch - cfg.TRAIN.SCHEDULED_SAMPLING.START) // cfg.TRAIN.SCHEDULED_SAMPLING.INC_EVERY
             ss_prob = min(cfg.TRAIN.SCHEDULED_SAMPLING.INC_PROB * frac, cfg.TRAIN.SCHEDULED_SAMPLING.MAX_PROB)
-            self.model.module.ss_prob = ss_prob
+            # self.model.ss_prob = ss_prob
 
     def display(self, iteration, data_time, batch_time, losses, loss_info):
         if iteration % cfg.SOLVER.DISPLAY != 0:

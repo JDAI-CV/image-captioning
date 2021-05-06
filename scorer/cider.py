@@ -33,20 +33,24 @@ class Cider:
         :return: cider (float) : computed CIDEr score for the corpus 
         """
 
-        # clear all the previous hypos and refs
-        self.cider_scorer.clear()
-        for i, hypo in enumerate(res):
-            ref = gts[i]
+        assert(gts.keys() == res.keys())
+        imgIds = gts.keys()
+
+        cider_scorer = CiderScorer(n=self._n, sigma=self._sigma)
+
+        for id in imgIds:
+            hypo = res[id]
+            ref = gts[id]
 
             # Sanity check.
-            #assert(type(hypo) is list)
-            #assert(len(hypo) == 1)
+            assert(type(hypo) is list)
+            assert(len(hypo) == 1)
             assert(type(ref) is list)
             assert(len(ref) > 0)
 
-            self.cider_scorer += (hypo, ref)
+            cider_scorer += (hypo[0], ref)
 
-        (score, scores) = self.cider_scorer.compute_score()
+        (score, scores) = cider_scorer.compute_score()
 
         return score, scores
 

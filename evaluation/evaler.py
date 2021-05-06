@@ -74,8 +74,7 @@ class Evaler(object):
     def __call__(self, model, rname):
         model.eval()
 
-        results = []
-        golden_sents = []
+        results, golden_sents = {}, {}
         with torch.no_grad():
             for _, (indices, target_seq, gv_feat, att_feats, att_mask) in tqdm.tqdm(enumerate(self.eval_loader)):
                 ids = indices
@@ -87,19 +86,26 @@ class Evaler(object):
                     seq, _ = model.decode_beam(**kwargs)  # modified
                 else:
                     seq, _ = model.decode(**kwargs)
-                sents = utils.decode_sequence(self.tokenizer.decode, seq.data)  # to check
+                sents = utils.decode_sequence(self.tokenizer.idx2token, seq.data)  # to check
 
-                gold_sents = utils.decode_sequence(self.tokenizer.decode,
+                gold_sents = utils.decode_sequence(self.tokenizer.idx2token,
                                                    target_seq.data)  # to check target_seq callable
 
-                for sid, sent in enumerate(sents):
-                    result = {ids[sid]: sent}
-                    results.append(result)
-                for sid, sent in enumerate(gold_sents):
-                    g_sents = {ids[sid]: sent}
-                    golden_sents.append(g_sents)
+                # for sid, sent in enumerate(sents):
+                #     result = {ids[sid]: [sent]}
+                #     results.append(result)
+                # for sid, sent in enumerate(gold_sents):
+                #     g_sents = {ids[sid]: [sent]}
+                #     golden_sents.append(g_sents)
 
-        eval_res = self.evaler(gts=golden_sents, res=results)
+                for sid, sent in enumerate(sents):
+                    results[ids[sid]] = [sent]
+                    # results.append(result)
+                for sid, sent in enumerate(gold_sents):
+                    golden_sents[ids[sid]] = [sent]
+                    # golden_sents.append(g_sents)
+
+        eval_res = self.evaler(golden_sents, results)
 
         result_folder = os.path.join(cfg.ROOT_DIR, 'result')
         if not os.path.exists(result_folder):

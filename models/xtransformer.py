@@ -130,8 +130,10 @@ class XTransformer(BasicModel):
             beam = selected_beam
             for _ in shape[1:]:
                 beam = beam.unsqueeze(-1)
+            beam = beam.long()
             s = torch.gather(s.view(*([batch_size, cur_beam_size] + shape[1:])), 1,
                              beam.expand(*([batch_size, beam_size] + shape[1:])))
+
             s = s.view(*([-1, ] + shape[1:]))
             return s
 
@@ -187,6 +189,7 @@ class XTransformer(BasicModel):
 
             selected_idx, selected_logprob = self.select(batch_size, beam_size, t, candidate_logprob)
             selected_beam = selected_idx / candidate_logprob.shape[-1]
+            selected_beam = selected_beam.long()
             selected_words = selected_idx - selected_beam * candidate_logprob.shape[-1]
 
             self.decoder.apply_to_states(self._expand_state(batch_size, beam_size, cur_beam_size, selected_beam))
@@ -649,8 +652,7 @@ class DecoderLayer(nn.Module):
             key=x,
             mask=seq_mask,
             value1=gx,
-            value2=x,
-            debug=True)
+            value2=x)
         x = self.word_dropout(x)
 
         x = residual + x
