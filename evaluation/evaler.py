@@ -87,9 +87,10 @@ class Evaler(object):
                 else:
                     seq, _ = model.decode(**kwargs)
                 sents = utils.decode_sequence(self.tokenizer.idx2token, seq.data)  # to check
-
+                # sents: [sent (str), ... ]
                 gold_sents = utils.decode_sequence(self.tokenizer.idx2token,
                                                    target_seq.data)  # to check target_seq callable
+
 
                 # for sid, sent in enumerate(sents):
                 #     result = {ids[sid]: [sent]}
@@ -99,12 +100,12 @@ class Evaler(object):
                 #     golden_sents.append(g_sents)
 
                 for sid, sent in enumerate(sents):
-                    results[ids[sid]] = [sent]
+                    results[ids[sid]] = [sent] # sents: [sent (str), ... ]
                     # results.append(result)
                 for sid, sent in enumerate(gold_sents):
                     golden_sents[ids[sid]] = [sent]
                     # golden_sents.append(g_sents)
-
+        # golden_sents : {image_id, [sent (str) ]}
         eval_res = self.evaler(golden_sents, results)
 
         result_folder = os.path.join(cfg.ROOT_DIR, 'result')

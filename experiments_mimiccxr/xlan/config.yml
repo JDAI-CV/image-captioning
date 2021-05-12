@@ -117,7 +117,7 @@ SOLVER:
   LR_POLICY:
     TYPE: 'Noam'              # 'Fix', 'Step', 'Noam', 'Plateau'
     GAMMA: 0.8
-    STEP_SIZE: 3
+    STEP_SIZE: 300
     SETP_TYPE: 'Iter'         # 'Epoch', 'Iter'
     WARMUP: 10000             #  For Noam only
     FACTOR: 1.0               #  For Noam only

@@ -40,7 +40,7 @@ DATA_LOADER:
 MODEL:
   TYPE: 'XLAN'
   SEQ_LEN: 60   # Modified                                # include <EOS>/<BOS>
-  VOCAB_SIZE: 7863    # TODO                      # exclude <EOS>/<BOS>
+  VOCAB_SIZE: 9487    # TODO                      # exclude <EOS>/<BOS>
   ########## word embedding ##########
   WORD_EMBED_DIM: 1024
   WORD_EMBED_ACT: 'CELU'
@@ -117,7 +117,7 @@ SOLVER:
   LR_POLICY:
     TYPE: 'Plateau'              # 'Fix', 'Step', 'MultiStep', 'Poly', Noam'
     GAMMA: 0.8
-    STEP_SIZE: 300
+    STEP_SIZE: 3
     SETP_TYPE: 'Epoch'        # 'Epoch', 'Iter'
     WARMUP: 10000             #  For Noam only
     FACTOR: 1.0               #  For Noam only

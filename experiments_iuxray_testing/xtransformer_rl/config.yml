@@ -3,13 +3,7 @@ SEED: 1546884941.160048
 
 ############################ TRAIN ############################
 TRAIN:
-  BATCH_SIZE: 20
-  #################### SCHEDULED_SAMPLING ####################
-  SCHEDULED_SAMPLING:
-    START: 6
-    INC_EVERY: 5
-    INC_PROB: 0.05
-    MAX_PROB: 0.5
+  BATCH_SIZE: 32
   #################### REINFORCEMENT ####################
   REINFORCEMENT:
     START: 0
@@ -34,36 +28,36 @@ DATA_LOADER:
   INPUT_SEQ_PATH: './mscoco/sent/coco_train_input.pkl'
   TARGET_SEQ_PATH: './mscoco/sent/coco_train_target.pkl'
   SEQ_PER_IMG: 5
-  MAX_FEAT: -1
+  MAX_FEAT: 50
 
 ############################ MODEL ############################
 MODEL:
-  TYPE: 'XLAN'
-  SEQ_LEN: 60   # Modified                                # include <EOS>/<BOS>
-  VOCAB_SIZE: 7863    # TODO                      # exclude <EOS>/<BOS>
+  TYPE: 'XTransformer'
+  SEQ_LEN: 60   # Modified                               # include <EOS>/<BOS>
+  VOCAB_SIZE: 9487  # TODO                        # exclude <EOS>/<BOS>
   ########## word embedding ##########
-  WORD_EMBED_DIM: 1024
+  WORD_EMBED_DIM: 768
   WORD_EMBED_ACT: 'CELU'
-  WORD_EMBED_NORM: False
-  DROPOUT_WORD_EMBED: 0.5
+  WORD_EMBED_NORM: False                   
+  DROPOUT_WORD_EMBED: 0.1
   ########## global features ##########
   GVFEAT_DIM: 2048
   GVFEAT_EMBED_DIM: -1
   GVFEAT_EMBED_ACT: 'NONE'
   DROPOUT_GV_EMBED: 0.0
   ########## attention features ##########
-  ATT_FEATS_DIM: 1024   # Modified
-  ATT_FEATS_EMBED_DIM: 1024
-  ATT_FEATS_EMBED_ACT: 'CELU'               # 'RELU', 'NONE'
+  ATT_FEATS_DIM: 1024 # Modified
+  ATT_FEATS_EMBED_DIM: 768
+  ATT_FEATS_EMBED_ACT: 'CELU'
   DROPOUT_ATT_EMBED: 0.5
-  ATT_FEATS_NORM: False
+  ATT_FEATS_NORM: True
   ########## attention param ##########
   ATT_HIDDEN_SIZE: -1
   ATT_HIDDEN_DROP: 0.0
-  ATT_ACT: 'TANH'                           # 'RELU', 'TANH'
+  ATT_ACT: 'TANH'
   ########## rnn param ##########
   RNN_SIZE: 1024
-  DROPOUT_LM: 0.5
+  DROPOUT_LM: 0.0
 
   ########## BOTTOM_UP ##########
   BOTTOM_UP:
@@ -72,30 +66,32 @@ MODEL:
 
   ########## BILINEAR ##########
   BILINEAR:
-    DIM: 1024
-    ENCODE_ATT_MID_DIM: [128, 64, 128]
-    DECODE_ATT_MID_DIM: [128, 64, 128]
-    ENCODE_ATT_MID_DROPOUT: 0.0
-    DECODE_ATT_MID_DROPOUT: 0.0
-    ATT_DIM: 1024
+    DIM: 768
+    ENCODE_ATT_MID_DIM: [96, 48, 96]
+    DECODE_ATT_MID_DIM: [96, 48, 96]
+    ENCODE_ATT_MID_DROPOUT: 0.1
+    DECODE_ATT_MID_DROPOUT: 0.1
+    ATT_DIM: 768
     ACT: 'CELU'
     ENCODE_DROPOUT: 0.5
-    DECODE_DROPOUT: 0.5
-    ENCODE_LAYERS: 4
-    DECODE_LAYERS: 1
+    DECODE_DROPOUT: 0.1
+    ENCODE_LAYERS: 6
+    DECODE_LAYERS: 6
     TYPE: 'LowRank'
     ATTTYPE: 'SCAtt' # SCAtt, BasicAtt
     HEAD: 8
-    ENCODE_BLOCK: 'LowRankBilinearEnc'
-    DECODE_BLOCK: 'LowRankBilinearDec'
+    ENCODE_FF_DROPOUT: 0.5
+    DECODE_FF_DROPOUT: 0.5
     ELU_ALPHA: 1.3
-    ENCODE_BIFEAT_EMB_DROPOUT: 0.3
-    
+    BIFEAT_EMB_ACT: 'RELU'
+    ENCODE_BIFEAT_EMB_DROPOUT: 0.1
+    DECODE_BIFEAT_EMB_DROPOUT: 0.1
+
 ############################ SOLVER ############################  
 SOLVER:
-  BASE_LR: 0.00001
-  TYPE: 'ADAM'                 # 'ADAM', 'SGD', 'ADAGRAD', 'RMSPROP'
-  MAX_EPOCH: 35
+  BASE_LR: 0.000005
+  TYPE: 'RADAM'                 # 'ADAM', 'SGD', 'ADAGRAD', 'RMSPROP'
+  MAX_EPOCH: 60
   MAX_ITER: -1
   GRAD_CLIP: 0.1               # Norm:5 , Clamp:0.1
   GRAD_CLIP_TYPE: 'Clamp'       # 'Clamp', 'Norm'
@@ -115,21 +111,21 @@ SOLVER:
     EPS: 1.0e-8
   ########## LR_POLICY ##########
   LR_POLICY:
-    TYPE: 'Plateau'              # 'Fix', 'Step', 'MultiStep', 'Poly', Noam'
+    TYPE: 'Plateau'           # 'Fix', 'Step', 'Noam', 'Plateau'
     GAMMA: 0.8
-    STEP_SIZE: 300
+    STEP_SIZE: 3
     SETP_TYPE: 'Epoch'        # 'Epoch', 'Iter'
     WARMUP: 10000             #  For Noam only
     FACTOR: 1.0               #  For Noam only
-    MODEL_SIZE: 1024          #  For Noam only
+    MODEL_SIZE: 768           #  For Noam only
 
     PLATEAU_FACTOR: 0.8
     PLATEAU_PATIENCE: 3
 
 ############################ LOSSES ############################
 LOSSES:
-  XE_TYPE: 'CrossEntropy'     # 'CrossEntropy', 'LabelSmoothing'
-  LABELSMOOTHING: 0.0
+  XE_TYPE: 'LabelSmoothing'     # 'CrossEntropy', 'LabelSmoothing'
+  LABELSMOOTHING: 0.1
   RL_TYPE: 'RewardCriterion'
 
 ############################ SCORER ############################
@@ -147,5 +143,5 @@ INFERENCE:
   EVAL: 'COCO'
   VAL_ANNFILE: './mscoco/misc/captions_val5k.json'
   TEST_ANNFILE: './mscoco/misc/captions_test5k.json'
-  BEAM_SIZE: 3
+  BEAM_SIZE: 2
   GREEDY_DECODE: True
