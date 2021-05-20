@@ -14,6 +14,7 @@ from models.basic_model import BasicModel
 from layers.positional_encoding import PositionalEncoding
 from .pretrained_models import ImageClassification
 from mlclassifier import GCNClassifier
+device = torch.device("cuda")
 
 def subsequent_mask(size):
     "Mask out subsequent positions."
@@ -75,10 +76,11 @@ class XTransformer(BasicModel):
 
     def forward(self, **kwargs):
         # forward entry
+        
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
         seq = kwargs[cfg.PARAM.INPUT_SENT]
 #         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
-        att_mask = torch.ones(16,70)
+        att_mask = torch.ones(16,70).to(device)
         att_mask = utils.expand_tensor(att_mask, cfg.DATA_LOADER.SEQ_PER_IMG)
         att_feats = utils.expand_tensor(att_feats, cfg.DATA_LOADER.SEQ_PER_IMG)
 
@@ -104,9 +106,10 @@ class XTransformer(BasicModel):
         # att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
         att_feats = self.get_visual_features(att_feats)
         batch_size, feat_size, _ = att_feats.shape
-        att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
+        att_feats = att_feats.reshape(batch_size, feat_size, -1)
         # print('att_feats.shape after pretrain', att_feats.shape)
         att_feats = self.att_embed(att_feats)  # forward entry
+ 
         gx, encoder_out = self.encoder(att_feats, att_mask)
 
         decoder_out = self.decoder(gx, seq, encoder_out, att_mask, seq_mask)
