@@ -77,7 +77,8 @@ class XTransformer(BasicModel):
         # forward entry
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
         seq = kwargs[cfg.PARAM.INPUT_SENT]
-        att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+#         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+        att_mask = torch.ones(16,70)
         att_mask = utils.expand_tensor(att_mask, cfg.DATA_LOADER.SEQ_PER_IMG)
         att_feats = utils.expand_tensor(att_feats, cfg.DATA_LOADER.SEQ_PER_IMG)
 
@@ -130,7 +131,8 @@ class XTransformer(BasicModel):
         wt = kwargs[cfg.PARAM.WT]
         state = kwargs[cfg.PARAM.STATE]
         encoder_out = kwargs[cfg.PARAM.ATT_FEATS]
-        att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+#         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+        att_mask = torch.ones(16,70)
         gx = kwargs[cfg.PARAM.GLOBAL_FEAT]
         p_att_feats = kwargs[cfg.PARAM.P_ATT_FEATS]
 
@@ -164,7 +166,8 @@ class XTransformer(BasicModel):
     # the beam search code is inspired by https://github.com/aimagelab/meshed-memory-transformer
     def decode_beam(self, **kwargs):
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
-        att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+        att_mask = torch.ones(16,70)
+#         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
         beam_size = kwargs['BEAM_SIZE']
         batch_size = att_feats.size(0)
         seq_logprob = torch.zeros((batch_size, 1, 1)).cuda()
@@ -264,7 +267,8 @@ class XTransformer(BasicModel):
         beam_size = kwargs['BEAM_SIZE']
         greedy_decode = kwargs['GREEDY_DECODE']
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
-        att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+        att_mask = torch.ones(16,70)
+#         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
 
         batch_size = att_feats.size(0)
         att_feats = self.att_embed(att_feats)
