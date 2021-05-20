@@ -139,10 +139,11 @@ class XTransformer(BasicModel):
         gx = kwargs[cfg.PARAM.GLOBAL_FEAT]
         p_att_feats = kwargs[cfg.PARAM.P_ATT_FEATS]
 
-        if state is None:
-            ys = wt.unsqueeze(1)
-        else:
-            ys = torch.cat([state[0][0], wt.unsqueeze(1)], dim=1)
+        # if state is None:
+        #     ys = wt.unsqueeze(1)
+        # else:
+        #     ys = torch.cat([state[0][0], wt.unsqueeze(1)], dim=1)
+        ys = torch.zeros(16,1, dtype = int)
         seq_mask = subsequent_mask(ys.size(1)).to(encoder_out.device).type(torch.cuda.FloatTensor)[:, -1, :].unsqueeze(
             1)
         decoder_out = self.decoder(gx, ys[:, -1].unsqueeze(-1), encoder_out, att_mask, seq_mask, p_att_feats, True).squeeze(1)
