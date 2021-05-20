@@ -103,7 +103,7 @@ class XTransformer(BasicModel):
         # att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
         # att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
         att_feats = self.get_visual_features(att_feats)
-        batch_size, feat_size, _, _ = att_feats.shape
+        batch_size, feat_size, _ = att_feats.shape
         att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
         # print('att_feats.shape after pretrain', att_feats.shape)
         att_feats = self.att_embed(att_feats)  # forward entry
@@ -177,7 +177,7 @@ class XTransformer(BasicModel):
 
         # Modified
         att_feats = self.get_visual_features(att_feats)
-        batch_size, feat_size, _, _ = att_feats.shape
+        batch_size, feat_size, _ = att_feats.shape
         att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
 
         att_feats = self.att_embed(att_feats)
