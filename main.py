@@ -127,7 +127,7 @@ class Trainer(object):
 
     def setup_network(self):
 #         model = models.create(cfg.MODEL.TYPE, args)
-        model = models.create('XTransformer', submodel, args)
+        model = models.create('XTransformer', submodel = submodel, args)
 
         if self.distributed:
             # this should be removed if we update BatchNorm stats
