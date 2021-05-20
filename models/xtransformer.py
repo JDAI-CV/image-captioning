@@ -13,7 +13,7 @@ import lib.utils as utils
 from models.basic_model import BasicModel
 from layers.positional_encoding import PositionalEncoding
 from .pretrained_models import ImageClassification
-from modules.mlclassifier import GCNClassifier
+from mlclassifier import GCNClassifier
 
 def subsequent_mask(size):
     "Mask out subsequent positions."
