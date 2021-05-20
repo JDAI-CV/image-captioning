@@ -143,7 +143,7 @@ class XTransformer(BasicModel):
         #     ys = wt.unsqueeze(1)
         # else:
         #     ys = torch.cat([state[0][0], wt.unsqueeze(1)], dim=1)
-        ys = torch.zeros(16,1, dtype = int)
+        ys = torch.zeros(16,1, dtype = int).to(device)
         seq_mask = subsequent_mask(ys.size(1)).to(encoder_out.device).type(torch.cuda.FloatTensor)[:, -1, :].unsqueeze(
             1)
         decoder_out = self.decoder(gx, ys[:, -1].unsqueeze(-1), encoder_out, att_mask, seq_mask, p_att_feats, True).squeeze(1)
