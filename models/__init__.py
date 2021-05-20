@@ -11,7 +11,7 @@ __factory = {
 def names():
     return sorted(__factory.keys())
 
-def create(name, submodel, args, submodel, **kwargs):
+def create(name, args, submodel, **kwargs):
     if name not in __factory:
         raise KeyError("Unknown caption model:", name)
     return __factory[name](args, **kwargs)
