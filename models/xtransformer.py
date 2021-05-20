@@ -13,7 +13,7 @@ import lib.utils as utils
 from models.basic_model import BasicModel
 from layers.positional_encoding import PositionalEncoding
 from .pretrained_models import ImageClassification
-
+from modules.mlclassifier import GCNClassifier
 
 def subsequent_mask(size):
     "Mask out subsequent positions."
@@ -114,16 +114,17 @@ class XTransformer(BasicModel):
         return decoder_out
 
     def forward_iuxray(self, att_feats):
-        att_feats, node_feats, fc_feats = self.submodel(images[:,0], images[:,1])
+        att_feats, node_feats, fc_feats = self.submodel(att_feats[:,0], att_feats[:,1])
+        input_feats = torch.cat((att_feats, node_feats), dim = 1)
         
-        att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
-        att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
-        att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
-        return att_feats
+#         att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
+#         att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
+#         att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
+        return input_feats
 
-    def forward_mimiccxr(self, att_feats):
-        att_feats = self.image_pretrained_models(att_feats)
-        return att_feats
+#     def forward_mimiccxr(self, att_feats):
+#         att_feats = self.image_pretrained_models(att_feats)
+#         return att_feats
 
     def get_logprobs_state(self, **kwargs):
         wt = kwargs[cfg.PARAM.WT]
