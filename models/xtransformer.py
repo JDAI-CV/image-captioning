@@ -169,7 +169,7 @@ class XTransformer(BasicModel):
     # the beam search code is inspired by https://github.com/aimagelab/meshed-memory-transformer
     def decode_beam(self, **kwargs):
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
-        att_mask = torch.ones(16,70)
+        att_mask = torch.ones(16,70).to(device)
 #         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
         beam_size = kwargs['BEAM_SIZE']
         batch_size = att_feats.size(0)
@@ -181,7 +181,7 @@ class XTransformer(BasicModel):
         # Modified
         att_feats = self.get_visual_features(att_feats)
         batch_size, feat_size, _ = att_feats.shape
-        att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
+        att_feats = att_feats.reshape(batch_size, feat_size, -1)
 
         att_feats = self.att_embed(att_feats)
         gx, encoder_out = self.encoder(att_feats, att_mask)
@@ -270,7 +270,7 @@ class XTransformer(BasicModel):
         beam_size = kwargs['BEAM_SIZE']
         greedy_decode = kwargs['GREEDY_DECODE']
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
-        att_mask = torch.ones(16,70)
+        att_mask = torch.ones(16,70).to(device)
 #         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
 
         batch_size = att_feats.size(0)
