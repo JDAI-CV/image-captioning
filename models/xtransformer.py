@@ -23,7 +23,7 @@ def subsequent_mask(size):
 
 
 class XTransformer(BasicModel):
-    def __init__(self, submodel = None, args):
+    def __init__(self, args, submodel = None):
         super(XTransformer, self).__init__()
         self.vocab_size = cfg.MODEL.VOCAB_SIZE + 1
         # image pretrained
