@@ -135,7 +135,7 @@ class XTransformer(BasicModel):
         state = kwargs[cfg.PARAM.STATE]
         encoder_out = kwargs[cfg.PARAM.ATT_FEATS]
 #         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
-        att_mask = torch.ones(16,70)
+        att_mask = torch.ones(16,70).to(device)
         gx = kwargs[cfg.PARAM.GLOBAL_FEAT]
         p_att_feats = kwargs[cfg.PARAM.P_ATT_FEATS]
 
@@ -145,8 +145,7 @@ class XTransformer(BasicModel):
             ys = torch.cat([state[0][0], wt.unsqueeze(1)], dim=1)
         seq_mask = subsequent_mask(ys.size(1)).to(encoder_out.device).type(torch.cuda.FloatTensor)[:, -1, :].unsqueeze(
             1)
-        decoder_out = self.decoder(gx, ys[:, -1].unsqueeze(-1), encoder_out, att_mask, seq_mask, p_att_feats,
-                                   True).squeeze(1)
+        decoder_out = self.decoder(gx, ys[:, -1].unsqueeze(-1), encoder_out, att_mask, seq_mask, p_att_feats, True).squeeze(1)
 
         logprobs = F.log_softmax(decoder_out, dim=-1)
         return logprobs, [ys.unsqueeze(0)]
