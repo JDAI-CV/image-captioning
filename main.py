@@ -24,6 +24,7 @@ from optimizer.optimizer import Optimizer
 from evaluation.evaler import Evaler
 from scorer.scorer import Scorer
 from lib.config import cfg, cfg_from_file
+from mlclassifier import GCNClassifier
 
 
 class Trainer(object):
