@@ -20,7 +20,7 @@ from datasets.radiology_dataset import IUXRAY, MIMICCXR
 from datasets.tokenizers import Tokenizer
 import lib.utils as utils
 from lib.utils import AverageMeter
-from optimizer.optimizer import Optimizer
+from optimizer.optimizer import Optimizer, build_optimizer
 from evaluation.evaler import Evaler
 from scorer.scorer import Scorer
 from lib.config import cfg, cfg_from_file
@@ -126,7 +126,7 @@ class Trainer(object):
         self.logger.info(pprint.pformat(cfg))
 
     def setup_network(self):
-#         model = models.create(cfg.MODEL.TYPE, args)
+        # model = models.create(cfg.MODEL.TYPE, args)
         model = models.create('XTransformer', args, submodel = submodel)
 
         if self.distributed:
@@ -147,7 +147,8 @@ class Trainer(object):
                            map_location=lambda storage, loc: storage)
             )
 
-        self.optim = Optimizer(self.model)
+        # self.optim = Optimizer(self.model)
+        self.optim = build_optimizer(args, model)
         self.xe_criterion = losses.create(cfg.LOSSES.XE_TYPE).cuda()
         self.rl_criterion = losses.create(cfg.LOSSES.RL_TYPE).cuda()
 
@@ -237,7 +238,7 @@ class Trainer(object):
         if self.distributed and dist.get_rank() > 0:
             return
         info_str = ' (DataTime/BatchTime: {:.3}/{:.3}) losses = {:.5}'.format(data_time.avg, batch_time.avg, losses.avg)
-        self.logger.info('Iteration ' + str(iteration) + info_str + ', lr = ' + str(self.optim.get_lr()))
+        # self.logger.info('Iteration ' + str(iteration) + info_str + ', lr = ' + str(self.optim.get_lr()))
         for name in sorted(loss_info):
             self.logger.info('  ' + name + ' = ' + str(loss_info[name]))
         data_time.reset()
@@ -323,11 +324,11 @@ class Trainer(object):
                 kwargs = self.make_kwargs(indices, input_seq, target_seq, gv_feat, att_feats, att_mask)
                 loss, loss_info = self.forward(kwargs)
                 loss.backward()
-                utils.clip_gradient(self.optim.optimizer, self.model,
-                                    cfg.SOLVER.GRAD_CLIP_TYPE, cfg.SOLVER.GRAD_CLIP)
+                # utils.clip_gradient(self.optim.optimizer, self.model,
+                #                     cfg.SOLVER.GRAD_CLIP_TYPE, cfg.SOLVER.GRAD_CLIP)
                 self.optim.step()
                 self.optim.zero_grad()
-                self.optim.scheduler_step('Iter')
+                # self.optim.scheduler_step('Iter')
 
                 batch_time.update(time.time() - start)
                 start = time.time()
