@@ -23,7 +23,7 @@ def subsequent_mask(size):
 
 
 class XTransformer(BasicModel):
-    def __init__(self, args):
+    def __init__(self, submodel = None, args):
         super(XTransformer, self).__init__()
         self.vocab_size = cfg.MODEL.VOCAB_SIZE + 1
         # image pretrained
@@ -71,6 +71,7 @@ class XTransformer(BasicModel):
             bifeat_emb_drop=cfg.MODEL.BILINEAR.DECODE_BIFEAT_EMB_DROPOUT,
             ff_dropout=cfg.MODEL.BILINEAR.DECODE_FF_DROPOUT,
             layer_num=cfg.MODEL.BILINEAR.DECODE_LAYERS)
+        self.submodel = submodel
 
     def forward(self, **kwargs):
         # forward entry
@@ -113,6 +114,8 @@ class XTransformer(BasicModel):
         return decoder_out
 
     def forward_iuxray(self, att_feats):
+        att_feats, node_feats, fc_feats = self.submodel(images[:,0], images[:,1])
+        
         att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
         att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
         att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
