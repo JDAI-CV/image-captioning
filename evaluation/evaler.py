@@ -13,6 +13,7 @@ from pycocoevalcap.bleu.bleu import Bleu
 from pycocoevalcap.meteor import Meteor
 from pycocoevalcap.rouge import Rouge
 from scorer.cider import Cider
+device = torch.device("cuda")
 
 
 def compute_scores(gts, res):
@@ -66,7 +67,9 @@ class Evaler(object):
         kwargs[cfg.PARAM.INDICES] = indices
         kwargs[cfg.PARAM.GLOBAL_FEAT] = gv_feat
         kwargs[cfg.PARAM.ATT_FEATS] = att_feats
+        # att_mask_a = torch.ones(16,70).to(device)
         kwargs[cfg.PARAM.ATT_FEATS_MASK] = att_mask
+        # kwargs[cfg.PARAM.ATT_FEATS_MASK] = att_mask_a
         kwargs['BEAM_SIZE'] = cfg.INFERENCE.BEAM_SIZE
         kwargs['GREEDY_DECODE'] = cfg.INFERENCE.GREEDY_DECODE
         return kwargs
