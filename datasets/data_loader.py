@@ -25,7 +25,7 @@ def sample_collate(batch):
 
     gv_feat = torch.cat([torch.from_numpy(b) for b in gv_feat], 0)
 
-    mask_arr = torch.ones([len(att_feats), 49]).float() # hard code 49
+    mask_arr = torch.ones([len(att_feats), 70]).float() # hard code 49
 
     att_mask = torch.cat([mask_arr], 0)
     att_feats = torch.stack(att_feats, 0) # TODO for mimic
@@ -58,7 +58,7 @@ def sample_collate_val(batch):
 
     gv_feat = torch.cat([torch.from_numpy(b) for b in gv_feat], 0)
 
-    mask_arr = torch.ones([len(att_feats), 49]).float() # hard code 49
+    mask_arr = torch.ones([len(att_feats), 70]).float() # hard code 49
 
     att_mask = torch.cat([mask_arr], 0)
     att_feats = torch.stack(att_feats, 0)
