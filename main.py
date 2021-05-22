@@ -320,6 +320,9 @@ class Trainer(object):
                 gv_feat = gv_feat.cuda()
                 att_feats = att_feats.cuda()
                 att_mask = att_mask.cuda()
+                # att_mask = torch.ones(16,70).cuda()
+                # print(att_mask.shape)
+
 
                 kwargs = self.make_kwargs(indices, input_seq, target_seq, gv_feat, att_feats, att_mask)
                 loss, loss_info = self.forward(kwargs)
@@ -341,8 +344,8 @@ class Trainer(object):
 
             self.save_model(epoch)
             val = self.eval(epoch)
-            self.optim.scheduler_step('Epoch', val)
-            self.scheduled_sampling(epoch)
+            # self.optim.scheduler_step('Epoch', val)
+            # self.scheduled_sampling(epoch)
 
             if self.distributed:
                 dist.barrier()
