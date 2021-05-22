@@ -131,6 +131,17 @@ class XTransformer(BasicModel):
 #         att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
         return input_feats
 
+#     def forward_mimic_cxr(self, images, targets=None, mode='train'):
+#         att_feats, fc_feats = self.visual_extractor(images)
+     
+#         if mode == 'train':
+#             output = self.encoder_decoder(fc_feats, att_feats, targets, mode='forward')
+#         elif mode == 'sample':
+#             output, _ = self.encoder_decoder(fc_feats, att_feats, mode='sample')
+#         else:
+#             raise ValueError
+#         return output
+    
 #     def forward_mimiccxr(self, att_feats):
 #         att_feats = self.image_pretrained_models(att_feats)
 #         return att_feats
