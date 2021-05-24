@@ -6,6 +6,7 @@ from torchvision import transforms
 import json
 from PIL import Image
 from .tokenizers import Tokenizer
+import random
 
 def random_position(image_1, image_2, thr):
   if random.random() < thr:
