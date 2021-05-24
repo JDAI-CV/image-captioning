@@ -48,7 +48,7 @@ class BaseDataset(Dataset):
 
 
 class IUXRAY(BaseDataset):
-    def __getitem__(self, idx, train_tag = False):
+    def __getitem__(self, idx, split = 'train'):
         # indices = np.array([idx]).astype('int') # Modified
         image_id = self.examples[idx]['id']
         indices = np.array([image_id])
@@ -59,7 +59,7 @@ class IUXRAY(BaseDataset):
         if self.transform is not None:
             image_1 = self.transform(image_1)
             image_2 = self.transform(image_2)
-        if train_tag  = True:
+        if split  = 'train':
             image = random_position(image_1, image_2, 0.5)
         else:
             image = torch.stack((image_1, image_2), 0)
