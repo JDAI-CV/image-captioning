@@ -142,9 +142,9 @@ class XTransformer(BasicModel):
 #             raise ValueError
 #         return output
     
-#     def forward_mimiccxr(self, att_feats):
-#         att_feats = self.image_pretrained_models(att_feats)
-#         return att_feats
+    def forward_mimiccxr(self, att_feats):
+        att_feats = self.image_pretrained_models(att_feats)
+        return att_feats
 
     def get_logprobs_state(self, **kwargs):
         wt = kwargs[cfg.PARAM.WT]
