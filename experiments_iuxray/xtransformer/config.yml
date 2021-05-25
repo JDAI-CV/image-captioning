@@ -75,8 +75,8 @@ MODEL:
     ACT: 'CELU'
     ENCODE_DROPOUT: 0.5
     DECODE_DROPOUT: 0.5
-    ENCODE_LAYERS: 3
-    DECODE_LAYERS: 3
+    ENCODE_LAYERS: 6
+    DECODE_LAYERS: 6
     TYPE: 'LowRank'
     ATTTYPE: 'SCAtt' # SCAtt, BasicAtt
     HEAD: 8

@@ -6,6 +6,15 @@ from torchvision import transforms
 import json
 from PIL import Image
 from .tokenizers import Tokenizer
+import random
+
+def random_position(image_1, image_2, thr):
+  if random.random() < thr:
+    img = torch.stack((image_1, image_2), 0)
+  else:
+    img = torch.stack((image_2, image_1), 0)
+  return img
+
 
 
 class BaseDataset(Dataset):
@@ -39,7 +48,7 @@ class BaseDataset(Dataset):
         return len(self.examples)
 
 
-class IUXRAY(BaseDataset):
+class IUXRAY(BaseDataset):      
     def __getitem__(self, idx):
         # indices = np.array([idx]).astype('int') # Modified
         image_id = self.examples[idx]['id']
@@ -51,7 +60,10 @@ class IUXRAY(BaseDataset):
         if self.transform is not None:
             image_1 = self.transform(image_1)
             image_2 = self.transform(image_2)
-        image = torch.stack((image_1, image_2), 0)
+        if self.split  == 'train':
+            image = random_position(image_1, image_2, 0.5)
+        else:
+            image = torch.stack((image_1, image_2), 0)
 
 
         report_ids = np.array(example['ids'])

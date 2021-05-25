@@ -13,7 +13,8 @@ import lib.utils as utils
 from models.basic_model import BasicModel
 from layers.positional_encoding import PositionalEncoding
 from .pretrained_models import ImageClassification
-
+from mlclassifier import GCNClassifier
+device = torch.device("cuda")
 
 def subsequent_mask(size):
     "Mask out subsequent positions."
@@ -23,7 +24,7 @@ def subsequent_mask(size):
 
 
 class XTransformer(BasicModel):
-    def __init__(self, args):
+    def __init__(self, args,submodel):
         super(XTransformer, self).__init__()
         self.vocab_size = cfg.MODEL.VOCAB_SIZE + 1
         # image pretrained
@@ -71,12 +72,15 @@ class XTransformer(BasicModel):
             bifeat_emb_drop=cfg.MODEL.BILINEAR.DECODE_BIFEAT_EMB_DROPOUT,
             ff_dropout=cfg.MODEL.BILINEAR.DECODE_FF_DROPOUT,
             layer_num=cfg.MODEL.BILINEAR.DECODE_LAYERS)
+        self.submodel = submodel
 
     def forward(self, **kwargs):
         # forward entry
+        
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
         seq = kwargs[cfg.PARAM.INPUT_SENT]
         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+        # att_mask = torch.ones(16,70).to(device)
         att_mask = utils.expand_tensor(att_mask, cfg.DATA_LOADER.SEQ_PER_IMG)
         att_feats = utils.expand_tensor(att_feats, cfg.DATA_LOADER.SEQ_PER_IMG)
 
@@ -101,11 +105,14 @@ class XTransformer(BasicModel):
         # att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
         # att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
         att_feats = self.get_visual_features(att_feats)
-        batch_size, feat_size, _, _ = att_feats.shape
+        batch_size, feat_size, _,_ = att_feats.shape
         att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
         # print('att_feats.shape after pretrain', att_feats.shape)
         att_feats = self.att_embed(att_feats)  # forward entry
+        # print('att_feats.shape after pretrain', att_feats.shape)
+    
         gx, encoder_out = self.encoder(att_feats, att_mask)
+        # print(gx.shape, encoder_out.shape)
 
         decoder_out = self.decoder(gx, seq, encoder_out, att_mask, seq_mask)
         # print('decoder_out.shape',decoder_out.shape) # 4, 41, 761
@@ -113,11 +120,28 @@ class XTransformer(BasicModel):
         return decoder_out
 
     def forward_iuxray(self, att_feats):
-        att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
-        att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
-        att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
-        return att_feats
+        att_feats, node_feats, fc_feats = self.submodel(att_feats[:,0], att_feats[:,1])
+        input_feats = torch.cat((att_feats, node_feats), dim = 1)
+        input_feats = input_feats.permute(0,2,1)
+        input_feats = input_feats.unsqueeze(-1)
 
+        
+#         att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
+#         att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
+#         att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
+        return input_feats
+
+#     def forward_mimic_cxr(self, images, targets=None, mode='train'):
+#         att_feats, fc_feats = self.visual_extractor(images)
+     
+#         if mode == 'train':
+#             output = self.encoder_decoder(fc_feats, att_feats, targets, mode='forward')
+#         elif mode == 'sample':
+#             output, _ = self.encoder_decoder(fc_feats, att_feats, mode='sample')
+#         else:
+#             raise ValueError
+#         return output
+    
     def forward_mimiccxr(self, att_feats):
         att_feats = self.image_pretrained_models(att_feats)
         return att_feats
@@ -127,6 +151,7 @@ class XTransformer(BasicModel):
         state = kwargs[cfg.PARAM.STATE]
         encoder_out = kwargs[cfg.PARAM.ATT_FEATS]
         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
+        
         gx = kwargs[cfg.PARAM.GLOBAL_FEAT]
         p_att_feats = kwargs[cfg.PARAM.P_ATT_FEATS]
 
@@ -134,10 +159,12 @@ class XTransformer(BasicModel):
             ys = wt.unsqueeze(1)
         else:
             ys = torch.cat([state[0][0], wt.unsqueeze(1)], dim=1)
+        # ys = torch.zeros(16,1, dtype = int).to(device)
         seq_mask = subsequent_mask(ys.size(1)).to(encoder_out.device).type(torch.cuda.FloatTensor)[:, -1, :].unsqueeze(
             1)
-        decoder_out = self.decoder(gx, ys[:, -1].unsqueeze(-1), encoder_out, att_mask, seq_mask, p_att_feats,
-                                   True).squeeze(1)
+        decoder_out = self.decoder(gx, ys[:, -1].unsqueeze(-1), encoder_out, att_mask, seq_mask, p_att_feats, True).squeeze(1)
+        # print('HHHHHHHHHHHHHHHHHHHHHHH',decoder_out.shape)
+        # raise Exception('end')
 
         logprobs = F.log_softmax(decoder_out, dim=-1)
         return logprobs, [ys.unsqueeze(0)]
@@ -160,6 +187,7 @@ class XTransformer(BasicModel):
     # the beam search code is inspired by https://github.com/aimagelab/meshed-memory-transformer
     def decode_beam(self, **kwargs):
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
+        # att_mask = torch.ones(16,70).to(device)
         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
         beam_size = kwargs['BEAM_SIZE']
         batch_size = att_feats.size(0)
@@ -170,10 +198,11 @@ class XTransformer(BasicModel):
 
         # Modified
         att_feats = self.get_visual_features(att_feats)
-        batch_size, feat_size, _, _ = att_feats.shape
+        batch_size, feat_size, _ ,_= att_feats.shape
         att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
-
+        # print(att_feats.shape)
         att_feats = self.att_embed(att_feats)
+        
         gx, encoder_out = self.encoder(att_feats, att_mask)
         p_att_feats = self.decoder.precompute(encoder_out)
 
@@ -260,11 +289,14 @@ class XTransformer(BasicModel):
         beam_size = kwargs['BEAM_SIZE']
         greedy_decode = kwargs['GREEDY_DECODE']
         att_feats = kwargs[cfg.PARAM.ATT_FEATS]
+        # att_mask = torch.ones(16,70).to(device)
         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
 
         batch_size = att_feats.size(0)
         att_feats = self.att_embed(att_feats)
         gx, encoder_out = self.encoder(att_feats, att_mask)
+        # print(gx.shape)
+        # print(encoder_out.shape)
         p_att_feats = self.decoder.precompute(encoder_out)
         self.decoder.init_buffer(batch_size)
 
@@ -339,6 +371,8 @@ class Encoder(nn.Module):
         # if att_masks is None:
         #     att_masks = x.new_ones(x.shape[:2], dtype=torch.long)
         # att_masks = att_masks.unsqueeze(-2)
+        # print(x.shape)
+        # print(att_masks.shape)
         gx = (torch.sum(x * att_masks.unsqueeze(-1), 1) / torch.sum(att_masks.unsqueeze(-1), 1))
 
         gx_arr = [gx]
