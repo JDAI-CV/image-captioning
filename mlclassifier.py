@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 
-
 class MLClassifier(nn.Module):
 
     def __init__(self, num_classes):
@@ -121,46 +120,66 @@ class GCNClassifier(nn.Module):
 
         self.avg_fnt = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
 
-    def forward(self, img1, img2):
-        batch_size = img1.size(0)
-        fw_A = self.fw_A.repeat(batch_size, 1, 1)
-        bw_A = self.bw_A.repeat(batch_size, 1, 1)
-        cnn_feats1 = self.densenet121.features(img1) #no linear layer
-        cnn_feats2 = self.densenet121.features(img2) #cnn_feats1 torch.Size([16, 1024, 7, 7])
-        # print('cnn_feats1',cnn_feats1.shape)
-        global_feats1 = cnn_feats1.mean(dim=(2, 3))
-        global_feats2 = cnn_feats2.mean(dim=(2, 3))
-        cls_feats1 = self.cls_atten(cnn_feats1)
-        cls_feats2 = self.cls_atten(cnn_feats2)
-        node_feats1 = torch.cat((global_feats1.unsqueeze(1), cls_feats1), dim=1)
-        node_feats2 = torch.cat((global_feats2.unsqueeze(1), cls_feats2), dim=1)
-        node_states1 = self.gcn(node_feats1, fw_A, bw_A)
-        node_states2 = self.gcn(node_feats2, fw_A, bw_A)
-        # v1:
-        # logits = img1.new_zeros((batch_size, self.num_classes), dtype=torch.float)
-        # for c in range(self.num_classes):
-        #     logits[:, c] = self.fcs[c](node_states1[:, c+1] + node_states2[:, c+1]).squeeze(1)
-        # return logits
-        # v2:
-        # global_states = node_states1.mean(dim=1) + node_states2.mean(dim=1)
-        # global_states = torch.cat((node_states1.mean(dim = 1), node_states2.mean(dim = 1)),dim = 1)
-        
-        cnn_feats1_reshaped = cnn_feats1.reshape(cnn_feats1.size(0),cnn_feats1.size(1),-1).permute(0,2,1)
-        cnn_feats2_reshaped = cnn_feats2.reshape(cnn_feats2.size(0),cnn_feats2.size(1),-1).permute(0,2,1)
+    def forward(self, img1, img2 = None):
+        if img2 is not None:
+            batch_size = img1.size(0)
+            fw_A = self.fw_A.repeat(batch_size, 1, 1)
+            bw_A = self.bw_A.repeat(batch_size, 1, 1)
+            cnn_feats1 = self.densenet121.features(img1) #no linear layer
+            cnn_feats2 = self.densenet121.features(img2) #cnn_feats1 torch.Size([16, 1024, 7, 7])
+            # print('cnn_feats1',cnn_feats1.shape)
+            global_feats1 = cnn_feats1.mean(dim=(2, 3))
+            global_feats2 = cnn_feats2.mean(dim=(2, 3))
+            cls_feats1 = self.cls_atten(cnn_feats1)
+            cls_feats2 = self.cls_atten(cnn_feats2)
+            node_feats1 = torch.cat((global_feats1.unsqueeze(1), cls_feats1), dim=1)
+            node_feats2 = torch.cat((global_feats2.unsqueeze(1), cls_feats2), dim=1)
+            node_states1 = self.gcn(node_feats1, fw_A, bw_A)
+            node_states2 = self.gcn(node_feats2, fw_A, bw_A)
+            # v1:
+            # logits = img1.new_zeros((batch_size, self.num_classes), dtype=torch.float)
+            # for c in range(self.num_classes):
+            #     logits[:, c] = self.fcs[c](node_states1[:, c+1] + node_states2[:, c+1]).squeeze(1)
+            # return logits
+            # v2:
+            # global_states = node_states1.mean(dim=1) + node_states2.mean(dim=1)
+            # global_states = torch.cat((node_states1.mean(dim = 1), node_states2.mean(dim = 1)),dim = 1)
+            
+            cnn_feats1_reshaped = cnn_feats1.reshape(cnn_feats1.size(0),cnn_feats1.size(1),-1).permute(0,2,1)
+            cnn_feats2_reshaped = cnn_feats2.reshape(cnn_feats2.size(0),cnn_feats2.size(1),-1).permute(0,2,1)
+            
+            cnn_feats = torch.cat((cnn_feats1_reshaped,cnn_feats2_reshaped),dim = 2)
+            # logits = self.fc2(global_states)
+            # print('global_states',global_states.shape)
+            # print('logits',logits.shape)
+            node_states = torch.cat((node_states1, node_states2), dim = 2)
+            
 
-        
-        cnn_feats = torch.cat((cnn_feats1_reshaped,cnn_feats2_reshaped),dim = 2)
-        # logits = self.fc2(global_states)
-        # print('global_states',global_states.shape)
-        # print('logits',logits.shape)
-        node_states = torch.cat((node_states1, node_states2), dim = 2)
-        
+            avg_feats1 = self.avg_fnt(cnn_feats1).squeeze().reshape(-1, cnn_feats1.size(1))
+            avg_feats2 = self.avg_fnt(cnn_feats2).squeeze().reshape(-1, cnn_feats1.size(1))
+            global_states = torch.cat((avg_feats1, avg_feats2), dim = 1)
+            # cnn_feats torch.Size([16, 49, 2048])
+            # node_states torch.Size([16, 21, 2048])
+            # global_states torch.Size([16, 2048])
+        if img2 is None:
+            batch_size = img1.size(0)
+            fw_A = self.fw_A.repeat(batch_size, 1, 1)
+            bw_A = self.bw_A.repeat(batch_size, 1, 1)
+            cnn_feats1 = self.densenet121.features(img1) #no linear layer
+            # print('cnn_feats1',cnn_feats1.shape)
+            global_feats1 = cnn_feats1.mean(dim=(2, 3))
+            cls_feats1 = self.cls_atten(cnn_feats1)
+            node_feats1 = torch.cat((global_feats1.unsqueeze(1), cls_feats1), dim=1)
+            node_states1 = self.gcn(node_feats1, fw_A, bw_A)
+            
+            cnn_feats1_reshaped = cnn_feats1.reshape(cnn_feats1.size(0),cnn_feats1.size(1),-1).permute(0,2,1)            
+            cnn_feats = cnn_feats1_reshaped
 
-        avg_feats1 = self.avg_fnt(cnn_feats1).squeeze().reshape(-1, cnn_feats1.size(1))
-        avg_feats2 = self.avg_fnt(cnn_feats2).squeeze().reshape(-1, cnn_feats1.size(1))
-        global_states = torch.cat((avg_feats1, avg_feats2), dim = 1)
-        # cnn_feats torch.Size([16, 49, 2048])
-        # node_states torch.Size([16, 21, 2048])
-        # global_states torch.Size([16, 2048])
+            node_states = node_states1
+            
+
+            avg_feats1 = self.avg_fnt(cnn_feats1).squeeze().reshape(-1, cnn_feats1.size(1))
+            global_states = avg_feats1
 
         return cnn_feats, node_states, global_states
+
