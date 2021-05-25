@@ -120,30 +120,22 @@ class XTransformer(BasicModel):
         return decoder_out
 
     def forward_iuxray(self, att_feats):
-        att_feats, node_feats, fc_feats = self.submodel(att_feats[:,0], att_feats[:,1])
-        input_feats = torch.cat((att_feats, node_feats), dim = 1)
-        input_feats = input_feats.permute(0,2,1)
-        input_feats = input_feats.unsqueeze(-1)
 
-        
-#         att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
-#         att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
-#         att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
-        return input_feats
+        att_feats, node_feats, fc_feats = self.submodel(att_feats[:, 0], att_feats[:, 1]) #bs, 49 2048
+        att_feats = torch.cat((att_feats, node_feats), dim = 1)
+        att_feats = att_feats.permute(0,2,1)
+        att_feats = att_feats.unsqueeze(-1)  # bs, 2048,74,1
 
-#     def forward_mimic_cxr(self, images, targets=None, mode='train'):
-#         att_feats, fc_feats = self.visual_extractor(images)
-     
-#         if mode == 'train':
-#             output = self.encoder_decoder(fc_feats, att_feats, targets, mode='forward')
-#         elif mode == 'sample':
-#             output, _ = self.encoder_decoder(fc_feats, att_feats, mode='sample')
-#         else:
-#             raise ValueError
-#         return output
-    
+        # att_feats_0 = self.image_pretrained_models(input_feats[:, 0]) 
+        # att_feats_1 = self.image_pretrained_models(input_feats[:, 1])
+        # att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
+        return att_feats
+
     def forward_mimiccxr(self, att_feats):
-        att_feats = self.image_pretrained_models(att_feats)
+        att_feats, node_feats, fc_feats = self.submodel(att_feats)
+        input_feats = torch.cat((att_feats, node_feats), dim = 1) #torch.Size([16, 70, 2048])
+        att_feats = att_feats.permute(0,2,1)
+        att_feats = att_feats.unsqueeze(-1)  # bs, 2048,74,1
         return att_feats
 
     def get_logprobs_state(self, **kwargs):
