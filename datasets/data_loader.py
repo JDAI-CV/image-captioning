@@ -42,7 +42,7 @@ if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
 elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
   mask_dim = 74
 elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
-  mask_dim = 79
+  mask_dim = 86
 def sample_collate(batch):
     indices, input_seq, target_seq, gv_feat, att_feats = zip(*batch)
 
