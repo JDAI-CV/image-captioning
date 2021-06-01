@@ -25,9 +25,34 @@ from evaluation.evaler import Evaler
 from scorer.scorer import Scorer
 from lib.config import cfg, cfg_from_file
 from mlclassifier import GCNClassifier
-
-
 device = torch.device('cuda')
+
+def parse_args():
+    """
+    Parse input arguments
+    """
+    parser = argparse.ArgumentParser(description='Image Captioning')
+    parser.add_argument('--folder', dest='folder', type=str, default=None)
+    parser.add_argument("--local_rank", type=int, default=0)
+    parser.add_argument("--resume", type=int, default=-1)
+    parser.add_argument('--image_dir', type=str, default='/content/iu_xray_resized/images/',
+                        help='the path to the directory containing the data.')
+    parser.add_argument('--ann_path', type=str, default='/content/iu_xray_resized/annotation.json',
+                        help='the path to the directory containing the data.')
+    parser.add_argument('--dataset_name', type=str, default='IUXRAY', choices=['IUXRAY', 'MIMICCXR'],
+                        help='the dataset to be used.')
+    parser.add_argument('--submodel', type=str, default='RGMG', choices=['RGMG', 'VSEGCN'],
+                        help='the knowledge graph to be used.')
+    
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
+    args = parser.parse_args()
+    return args
+
+args = parse_args()
 if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
     fw_adj = torch.tensor([
     #FOR RGMG on IUXray
@@ -84,8 +109,8 @@ elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
         [0.0, 0.0, 0.0, 0.0, 0.6395125017555444, 0.0, 0.0, 0.0, 0.0, 0.46624078048150774, 0.6669114759436587, 0.29918669581834156, 1.4172170703435527, 0.0, 0.3484577448251243, 0.0, 0.07092804383736119, 0.0, 0.06907447518803858, 0.0, 0.0, 0.6449325692248835, 0.0, 0.0, 0.0] ,
         ], dtype=torch.float,device=device)
 elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
-#FOR VSEGCN on mimic
     fw_adj = torch.tensor([
+#FOR VSEGCN on mimic
         [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] ,
         [0.0, 0.0, 0.554004673298568, 0.3230466430334976, 0.2631825039749924, 0.7016287008480984, 0.24746163509836083, 0.0010015098042039912, 0.5068736479106769, 0.0, 0.9524974820767607, 0.0, 0.274863833501621, 0.41494699762748494, 0.5840689600939755, 0.0, 0.0, 0.1302442384969287, 0.0, 0.6339873741551628, 0.0, 0.0, 0.0, 0.0, 0.13757450134915059, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.20484800268752174, 0.0, 0.3451355245988348, 0.0, 0.0, 0.31496065589330335] ,
         [0.0, 0.554004673298568, 0.0, 0.0, 0.8777428349239078, 0.48756689514453816, 0.15609090494487807, 0.0, 0.2680360388191779, 0.0, 0.6199516595911282, 0.42238326753620825, 0.11635380051050957, 0.0020601220064393085, 0.6321690244338739, 0.0, 0.0, 0.08334337914718853, 0.5194350922631013, 0.12854873550846002, 0.6928120918404297, 0.0, 0.0, 0.9837299370816517, 0.2314271028213519, 0.5817251164456204, 0.0, 0.0, 0.0, 0.0, 0.0, 0.33811183663241207, 0.0, 0.13936476949018967, 0.0, 0.0, 0.07089242056885223] ,
@@ -123,7 +148,7 @@ elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.656008131578071, 0.3474221602648512, 0.0, 0.0, 0.12422641272658975, 0.2778525728199598, 0.0, 1.2377447423336991, 0.0884563575795982, 0.15510336927054139, 0.1439133818303898, 0.0, 0.2525866980495684, 1.442822630962518, 0.0, 0.221278095246663, 0.0, 0.0, 1.2343811011663848, 1.540851917651678, 0.030319915064814112, 0.0, 0.2510742769865065, 0.676971258598654, 1.5082427073912366, 0.43925238577431364, 0.8740258958015569, 0.42342916886466814, 0.0, 0.0, 0.0] ,
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.30464217507912805, 0.019380062443701017, 0.028679991724856257, 0.0, 0.2006116936209859, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3542350803376888, 0.0, 0.0, 0.041488578522214464, 0.0, 0.8603703454658308, 0.7821347726775432, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.20262509195680156, 0.0, 0.04338409257246071, 0.2474464019557586, 0.0, 0.0, 0.0, 0.0] ,
         [0.0, 0.31496065589330335, 0.07089242056885223, 0.36112875829496877, 0.47600439204660566, 0.5800348339999603, 0.0, 0.15823233737507106, 0.3988597091752934, 0.0, 0.16806740202956802, 0.0, 0.0, 0.0, 1.2708509083599127, 0.32669031419868527, 0.0, 0.0, 0.0, 0.21531865324924443, 0.6698830923247899, 0.4309320418653175, 0.0, 0.0, 0.24145505239298407, 0.0, 0.0, 0.6247400008366559, 0.0, 0.0, 0.0, 0.0, 0.0, 0.33323103097930845, 0.0, 0.0, 0.0] ,
-            ], dtype=torch.float,device=device) 
+        ], dtype=torch.float,device=device) 
 else:
     raise Nonetype("There is no this kind of KG or dataset")
  
@@ -145,7 +170,6 @@ else:
 submodel = GCNClassifier(num_feat, fw_adj, bw_adj) 
 
 state_dict = submodel.state_dict()
-#For RGMG
 
 if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
     KG_path = '/content/pretrainedKG/gcnclassifier_v2_ones3_t401v2t3_lr1e-6_e80.pth'
@@ -453,30 +477,6 @@ class Trainer(object):
                 dist.barrier()
 
 
-def parse_args():
-    """
-    Parse input arguments
-    """
-    parser = argparse.ArgumentParser(description='Image Captioning')
-    parser.add_argument('--folder', dest='folder', type=str, default=None)
-    parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument("--resume", type=int, default=-1)
-    parser.add_argument('--image_dir', type=str, default='/content/iu_xray_resized/images/',
-                        help='the path to the directory containing the data.')
-    parser.add_argument('--ann_path', type=str, default='/content/iu_xray_resized/annotation.json',
-                        help='the path to the directory containing the data.')
-    parser.add_argument('--dataset_name', type=str, default='IUXRAY', choices=['IUXRAY', 'MIMICCXR'],
-                        help='the dataset to be used.')
-    parser.add_argument('--submodel', type=str, default='RGMG', choices=['RGMG', 'VSEGCN'],
-                        help='the knowledge graph to be used.')
-    
-
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
-
-    args = parser.parse_args()
-    return args
 
 
 if __name__ == '__main__':
