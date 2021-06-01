@@ -33,6 +33,8 @@ DATA_LOADER:
 ############################ MODEL ############################
 MODEL:
   TYPE: 'XTransformer'
+  SUBMODEL: 'VSEGCN'
+  DATASET: "IUXRAY"
   SEQ_LEN: 60   # Modified                               # include <EOS>/<BOS>
   VOCAB_SIZE: 760   # TODO                       # exclude <EOS>/<BOS> IUXRAY: 760
   ########## word embedding ##########
