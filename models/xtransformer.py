@@ -284,7 +284,10 @@ class XTransformer(BasicModel):
         # att_mask = torch.ones(16,70).to(device)
         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
 
-        batch_size = att_feats.size(0)
+        att_feats = self.get_visual_features(att_feats)
+        batch_size, feat_size, _ ,_= att_feats.shape
+        att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
+        
         att_feats = self.att_embed(att_feats)
         gx, encoder_out = self.encoder(att_feats, att_mask)
         # print(gx.shape)
