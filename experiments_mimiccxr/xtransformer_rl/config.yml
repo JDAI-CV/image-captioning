@@ -3,14 +3,14 @@ SEED: 1546884941.160048
 
 ############################ TRAIN ############################
 TRAIN:
-  BATCH_SIZE: 32
+  BATCH_SIZE: 16
   #################### REINFORCEMENT ####################
   REINFORCEMENT:
     START: 0
 
 ############################ TEST ############################  
 TEST:
-  BATCH_SIZE: 36
+  BATCH_SIZE: 16
 
 ############################ DATA_LOADER ############################
 DATA_LOADER:
@@ -75,8 +75,8 @@ MODEL:
     ACT: 'CELU'
     ENCODE_DROPOUT: 0.5
     DECODE_DROPOUT: 0.1
-    ENCODE_LAYERS: 6
-    DECODE_LAYERS: 6
+    ENCODE_LAYERS: 3
+    DECODE_LAYERS: 3
     TYPE: 'LowRank'
     ATTTYPE: 'SCAtt' # SCAtt, BasicAtt
     HEAD: 8

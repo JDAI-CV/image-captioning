@@ -6,9 +6,9 @@ TRAIN:
   BATCH_SIZE: 16
   #################### REINFORCEMENT ####################
   REINFORCEMENT:
-    START: 0
+    START: 9999
 
-############################ TEST ############################  
+############################ TEST ############################
 TEST:
   BATCH_SIZE: 16
 
@@ -27,18 +27,18 @@ DATA_LOADER:
   TEST_ID: './mscoco/txt/coco_test_image_id.txt'
   INPUT_SEQ_PATH: './mscoco/sent/coco_train_input.pkl'
   TARGET_SEQ_PATH: './mscoco/sent/coco_train_target.pkl'
-  SEQ_PER_IMG: 5
+  SEQ_PER_IMG: 1
   MAX_FEAT: 50
 
 ############################ MODEL ############################
 MODEL:
   TYPE: 'XTransformer'
   SEQ_LEN: 60   # Modified                               # include <EOS>/<BOS>
-  VOCAB_SIZE: 9487  # TODO                        # exclude <EOS>/<BOS>
+  VOCAB_SIZE: 760   # TODO                       # exclude <EOS>/<BOS> IUXRAY: 760
   ########## word embedding ##########
   WORD_EMBED_DIM: 768
   WORD_EMBED_ACT: 'CELU'
-  WORD_EMBED_NORM: False                   
+  WORD_EMBED_NORM: False
   DROPOUT_WORD_EMBED: 0.1
   ########## global features ##########
   GVFEAT_DIM: 2048
@@ -46,7 +46,7 @@ MODEL:
   GVFEAT_EMBED_ACT: 'NONE'
   DROPOUT_GV_EMBED: 0.0
   ########## attention features ##########
-  ATT_FEATS_DIM: 1024 # Modified
+  ATT_FEATS_DIM: 1024   # Modified
   ATT_FEATS_EMBED_DIM: 768
   ATT_FEATS_EMBED_ACT: 'CELU'
   DROPOUT_ATT_EMBED: 0.5
@@ -57,7 +57,7 @@ MODEL:
   ATT_ACT: 'TANH'
   ########## rnn param ##########
   RNN_SIZE: 1024
-  DROPOUT_LM: 0.0
+  DROPOUT_LM: 0.5
 
   ########## BOTTOM_UP ##########
   BOTTOM_UP:
@@ -74,7 +74,7 @@ MODEL:
     ATT_DIM: 768
     ACT: 'CELU'
     ENCODE_DROPOUT: 0.5
-    DECODE_DROPOUT: 0.1
+    DECODE_DROPOUT: 0.5
     ENCODE_LAYERS: 6
     DECODE_LAYERS: 6
     TYPE: 'LowRank'
@@ -84,21 +84,21 @@ MODEL:
     DECODE_FF_DROPOUT: 0.5
     ELU_ALPHA: 1.3
     BIFEAT_EMB_ACT: 'RELU'
-    ENCODE_BIFEAT_EMB_DROPOUT: 0.1
-    DECODE_BIFEAT_EMB_DROPOUT: 0.1
+    ENCODE_BIFEAT_EMB_DROPOUT: 0.3
+    DECODE_BIFEAT_EMB_DROPOUT: 0.3
 
-############################ SOLVER ############################  
+############################ SOLVER ############################
 SOLVER:
-  BASE_LR: 0.000005
-  TYPE: 'RADAM'                 # 'ADAM', 'SGD', 'ADAGRAD', 'RMSPROP'
-  MAX_EPOCH: 60
+  BASE_LR: 0.000001
+  TYPE: 'RADAM'                 # 'ADAM', 'SGD', 'RADAM'
+  MAX_EPOCH: 70
   MAX_ITER: -1
-  GRAD_CLIP: 0.1               # Norm:5 , Clamp:0.1
-  GRAD_CLIP_TYPE: 'Clamp'       # 'Clamp', 'Norm'
+  GRAD_CLIP: 0.1                # Norm:0.5 , Clamp:0.1
+  GRAD_CLIP_TYPE: 'Clamp'       # 'Clamp'  , 'Norm'
   WEIGHT_DECAY: 0.0000
   WEIGHT_DECAY_BIAS: 0.0
   BIAS_LR_FACTOR: 1
-  DISPLAY: 20
+  DISPLAY: 100
   TEST_INTERVAL: 1
   SNAPSHOT_ITERS: 1
 
@@ -107,20 +107,17 @@ SOLVER:
     MOMENTUM: 0.9
   ########## ADAM ##########
   ADAM:
-    BETAS: [0.9, 0.999]
-    EPS: 1.0e-8
+    BETAS: [0.9, 0.98]
+    EPS: 1.0e-9
   ########## LR_POLICY ##########
   LR_POLICY:
-    TYPE: 'Plateau'           # 'Fix', 'Step', 'Noam', 'Plateau'
+    TYPE: 'Noam'              # 'Fix', 'Step', 'Noam', 'Plateau'
     GAMMA: 0.8
     STEP_SIZE: 3
-    SETP_TYPE: 'Epoch'        # 'Epoch', 'Iter'
+    SETP_TYPE: 'Iter'         # 'Epoch', 'Iter'
     WARMUP: 10000             #  For Noam only
     FACTOR: 1.0               #  For Noam only
     MODEL_SIZE: 768           #  For Noam only
-
-    PLATEAU_FACTOR: 0.8
-    PLATEAU_PATIENCE: 3
 
 ############################ LOSSES ############################
 LOSSES:
