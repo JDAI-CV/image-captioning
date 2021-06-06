@@ -22,31 +22,43 @@ def subsequent_mask(size):
     subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
     return torch.from_numpy(subsequent_mask) == 0
 
+def clones(module, N):
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
-class XTransformer(BasicModel):
+def makeMask(input_features):
+    bs, seq, feats = input_features.shape
+    return torch.ones(bs, seq, dtype = torch.long) # hardcode to cuda
+
+class DWEXTransformer(BasicModel):
     def __init__(self, args, submodel):
-        super(XTransformer, self).__init__()
+        super(DWEXTransformer, self).__init__()
         self.vocab_size = cfg.MODEL.VOCAB_SIZE + 1
         # image pretrained
         self.image_pretrained_models, self.input_visual_feats = ImageClassification.image_features(
             'densenet', fixed_weight=False, pretrained_model=cfg.MODEL.PretrainedImageModel)
         if args.dataset_name == 'IUXRAY':
-          num_images = 2
-          self.get_visual_features = self.forward_iuxray
-        else: # 'MIMICCXR'
-          num_images = 1
-          self.get_visual_features = self.forward_mimiccxr
+            num_images = 2
+            self.get_visual_features = self.forward_iuxray
+        elif args.dataset_name == 'MIMICCXR':
+            num_images = 1
+            self.get_visual_features = self.forward_mimiccxr
+        elif args.dataset_name == 'MIMICCXR_MultiImages':
+            num_images = 2
+            self.get_visual_features = self.forward_mimiccxr
 
         # att_feats encoder
-        sequential = []
-        sequential.append(nn.Linear(self.input_visual_feats * num_images, cfg.MODEL.ATT_FEATS_EMBED_DIM))
-        sequential.append(utils.activation(cfg.MODEL.ATT_FEATS_EMBED_ACT))
+        cnn_sequential = []
+        cnn_sequential.append(nn.Linear(self.input_visual_feats * num_images, cfg.MODEL.ATT_FEATS_EMBED_DIM))
+        cnn_sequential.append(utils.activation(cfg.MODEL.ATT_FEATS_EMBED_ACT))
         if cfg.MODEL.ATT_FEATS_NORM == True:
-            sequential.append(nn.LayerNorm(cfg.MODEL.ATT_FEATS_EMBED_DIM))
+            cnn_sequential.append(nn.LayerNorm(cfg.MODEL.ATT_FEATS_EMBED_DIM))
         if cfg.MODEL.DROPOUT_ATT_EMBED > 0:
-            sequential.append(nn.Dropout(cfg.MODEL.DROPOUT_ATT_EMBED))
+            cnn_sequential.append(nn.Dropout(cfg.MODEL.DROPOUT_ATT_EMBED))
 
-        self.att_embed = nn.Sequential(*sequential) if len(sequential) > 0 else None
+        gcn_sequential = clones(cnn_sequential, 1)
+
+        self.cnn_embed = nn.Sequential(*cnn_sequential) if len(cnn_sequential) > 0 else None
+        self.gcn_embed = nn.Sequential(*gcn_sequential) if len(gcn_sequential) > 0 else None
 
         self.encoder = Encoder(
             embed_dim=cfg.MODEL.BILINEAR.DIM,
@@ -83,6 +95,9 @@ class XTransformer(BasicModel):
         # att_mask = torch.ones(16,70).to(device)
         att_mask = utils.expand_tensor(att_mask, cfg.DATA_LOADER.SEQ_PER_IMG)
         att_feats = utils.expand_tensor(att_feats, cfg.DATA_LOADER.SEQ_PER_IMG)
+        # HARDCODE: att_mask = None
+        # Regenerate later
+        att_mask = None
 
         ##############################################
         seq_mask = (seq > 0).type(torch.cuda.IntTensor)
@@ -91,28 +106,19 @@ class XTransformer(BasicModel):
         seq_mask = seq_mask & subsequent_mask(seq.size(-1)).to(seq_mask)
         seq_mask = seq_mask.type(torch.cuda.FloatTensor)
         ##############################################
-        # print('att_feats.shape b4 pretrain',att_feats.shape)
-        # if len(att_feats.shape) == 5:
-        #   batch_size = att_feats.shape[0]
-        #   img_size = att_feats.shape[1]
-        #   channel_size = att_feats.shape[2]
-        #   hidden_size1 = att_feats.shape[3]
-        #   hidden_size2 = att_feats.shape[4]
-        #   att_feats = att_feats.view(batch_size, -1, hidden_size1, hidden_size2)
 
-        # FEED IUXRAY: two images
-        # att_feats_0 = self.image_pretrained_models(att_feats[:, 0])
-        # att_feats_1 = self.image_pretrained_models(att_feats[:, 1])
-        # att_feats = torch.cat((att_feats_0, att_feats_1), dim=1)  # shape (bs, 2048, 7, 7)
-        att_feats = self.get_visual_features(att_feats)
-        batch_size, feat_size, _,_ = att_feats.shape
-        att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
-        # print('att_feats.shape after pretrain', att_feats.shape)
-        att_feats = self.att_embed(att_feats)  # forward entry
-        # print('att_feats.shape after pretrain', att_feats.shape)
+
+        cnn_feats, gcn_feats = self.get_visual_features(att_feats)
+        all_feats = torch.cat([cnn_feats, gcn_feats], dim = 1)
+
+        att_mask = makeMask(all_feats)
+        cnn_mask = makeMask(cnn_feats)
+        gcn_mask = makeMask(gcn_feats)
+
+        cnn_feats = self.cnn_embed(cnn_feats)  # forward entry
+        gcn_feats = self.gcn_embed(gcn_feats)
     
-        gx, encoder_out = self.encoder(att_feats, att_mask)
-        # print(gx.shape, encoder_out.shape)
+        gx, encoder_out = self.encoder(cnn_feats, gcn_feats, cnn_mask, gcn_mask)
 
         decoder_out = self.decoder(gx, seq, encoder_out, att_mask, seq_mask)
         # print('decoder_out.shape',decoder_out.shape) # 4, 41, 761
@@ -122,21 +128,17 @@ class XTransformer(BasicModel):
     def forward_iuxray(self, att_feats):
 
         att_feats, node_feats, fc_feats = self.submodel(att_feats[:, 0], att_feats[:, 1]) #bs, 49 2048
-        att_feats = torch.cat((att_feats, node_feats), dim = 1)#Gcn+cnn
-#         att_feats = att_feats#cnn only
-#         att_feats = node_feats#gcn only
-        att_feats = att_feats.permute(0,2,1)
-        att_feats = att_feats.unsqueeze(-1)  # bs, 2048,74,1
-        return att_feats
+
+        return att_feats, node_feats
 
     def forward_mimiccxr(self, att_feats):
-        att_feats, node_feats, fc_feats = self.submodel(att_feats)
-        att_feats = torch.cat((att_feats, node_feats), dim = 1) #torch.Size([16, 70, 2048])
-#         att_feats = att_feats#cnn only
-#         att_feats = node_feats#gcn only
-        att_feats = att_feats.permute(0,2,1)
-        att_feats = att_feats.unsqueeze(-1)  # bs, 2048,74,1
-        return att_feats
+        if self.args.dataset_name == 'mimic_cxr_2images':
+            att_feats, node_feats, fc_feats = self.submodel(att_feats[:, 0], att_feats[:, 1])
+        else:
+            # if only one image is inputted.
+            att_feats, node_feats, fc_feats = self.submodel(att_feats)
+
+        return att_feats, node_feats
 
     def get_logprobs_state(self, **kwargs):
         wt = kwargs[cfg.PARAM.WT]
@@ -155,8 +157,7 @@ class XTransformer(BasicModel):
         seq_mask = subsequent_mask(ys.size(1)).to(encoder_out.device).type(torch.cuda.FloatTensor)[:, -1, :].unsqueeze(
             1)
         decoder_out = self.decoder(gx, ys[:, -1].unsqueeze(-1), encoder_out, att_mask, seq_mask, p_att_feats, True).squeeze(1)
-        # print('HHHHHHHHHHHHHHHHHHHHHHH',decoder_out.shape)
-        # raise Exception('end')
+
 
         logprobs = F.log_softmax(decoder_out, dim=-1)
         return logprobs, [ys.unsqueeze(0)]
@@ -188,14 +189,20 @@ class XTransformer(BasicModel):
         selected_words = None
         seq_mask = torch.ones((batch_size, beam_size, 1)).cuda()
 
-        # Modified
-        att_feats = self.get_visual_features(att_feats)
-        batch_size, feat_size, _ ,_= att_feats.shape
-        att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
-        # print(att_feats.shape)
-        att_feats = self.att_embed(att_feats)
-        
-        gx, encoder_out = self.encoder(att_feats, att_mask)
+
+
+        cnn_feats, gcn_feats = self.get_visual_features(att_feats)
+        all_feats = torch.cat([cnn_feats, gcn_feats], dim=1)
+
+        att_mask = makeMask(all_feats)
+        cnn_mask = makeMask(cnn_feats)
+        gcn_mask = makeMask(gcn_feats)
+
+        cnn_feats = self.cnn_embed(cnn_feats)  # forward entry
+        gcn_feats = self.gcn_embed(gcn_feats)
+
+        gx, encoder_out = self.encoder(cnn_feats, gcn_feats, cnn_mask, gcn_mask)
+
         p_att_feats = self.decoder.precompute(encoder_out)
 
         state = None
@@ -284,14 +291,20 @@ class XTransformer(BasicModel):
         # att_mask = torch.ones(16,70).to(device)
         att_mask = kwargs[cfg.PARAM.ATT_FEATS_MASK]
 
-        att_feats = self.get_visual_features(att_feats)
-        batch_size, feat_size, _ ,_= att_feats.shape
-        att_feats = att_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
-        
-        att_feats = self.att_embed(att_feats)
-        gx, encoder_out = self.encoder(att_feats, att_mask)
-        # print(gx.shape)
-        # print(encoder_out.shape)
+
+        batch_size = att_feats.shape[0]
+        cnn_feats, gcn_feats = self.get_visual_features(att_feats)
+        all_feats = torch.cat([cnn_feats, gcn_feats], dim=1)
+
+        att_mask = makeMask(all_feats)
+        cnn_mask = makeMask(cnn_feats)
+        gcn_mask = makeMask(gcn_feats)
+
+        cnn_feats = self.cnn_embed(cnn_feats)  # forward entry
+        gcn_feats = self.gcn_embed(gcn_feats)
+
+        gx, encoder_out = self.encoder(cnn_feats, gcn_feats, cnn_mask, gcn_mask)
+
         p_att_feats = self.decoder.precompute(encoder_out)
         self.decoder.init_buffer(batch_size)
 
@@ -356,27 +369,46 @@ class Encoder(nn.Module):
                 ff_dropout=ff_dropout)
             self.layers.append(sublayer)
 
-        self.proj_norm = nn.Sequential(
+        self.cnn_proj_norm = nn.Sequential(
+            nn.Linear(embed_dim * (layer_num + 1), embed_dim),
+            torch.nn.LayerNorm(embed_dim))
+        self.gcn_proj_norm = nn.Sequential(
             nn.Linear(embed_dim * (layer_num + 1), embed_dim),
             torch.nn.LayerNorm(embed_dim))
 
-    def forward(self, x, mask):
+    # def forward(self, x, mask):
+    #     # we try not to use the mask
+    #       gx = (torch.sum(x * att_masks.unsqueeze(-1), 1) / torch.sum(att_masks.unsqueeze(-1), 1))
+
+    def forward(self, cnn_feats, gcn_feats, cnn_mask, gcn_mask):
+
+        # we try not to use the mask
+
         # drop mask
-        att_masks = mask
+
         # if att_masks is None:
         #     att_masks = x.new_ones(x.shape[:2], dtype=torch.long)
         # att_masks = att_masks.unsqueeze(-2)
         # print(x.shape)
         # print(att_masks.shape)
-        gx = (torch.sum(x * att_masks.unsqueeze(-1), 1) / torch.sum(att_masks.unsqueeze(-1), 1))
+        cnn_gx = (torch.sum(cnn_feats * cnn_mask.unsqueeze(-1), 1) / torch.sum(cnn_mask.unsqueeze(-1), 1))
+        gcn_gx = (torch.sum(gcn_feats * gcn_mask.unsqueeze(-1), 1) / torch.sum(gcn_mask.unsqueeze(-1), 1))
 
-        gx_arr = [gx]
+        cnn_gx_arr = [cnn_gx]
+        gcn_gx_arr = [gcn_gx]
         for layer in self.layers:
-            gx, x = layer(gx, x, att_masks)  # modified
-            gx_arr.append(gx)
+            cnn_gx, gcn_gx, cnn_feats, gcn_feats = layer(cnn_gx, gcn_gx, cnn_feats, gcn_feats, cnn_mask, gcn_mask)  # modified
+            cnn_gx_arr.append(cnn_gx)
+            gcn_gx_arr.append(gcn_gx)
 
-        gx = torch.cat(gx_arr, dim=-1)
-        gx = self.proj_norm(gx)
+        cnn_gx = torch.cat(cnn_gx_arr, dim=-1) # cat dim?
+        cnn_gx = self.cnn_proj_norm(cnn_gx)
+
+        gcn_gx = torch.cat(gcn_gx_arr, dim=-1)
+        gcn_gx = self.gcn_proj_norm(gcn_gx) # TODO
+
+        gx = torch.cat([cnn_gx, gcn_gx], dim = -1) # TODO: cat dim
+        x = torch.cat([cnn_feats, gcn_feats], dim = 1) # cat at seq
 
         return gx, x
 
@@ -395,54 +427,59 @@ class EncoderLayer(nn.Module):
             ff_dropout
     ):
         super(EncoderLayer, self).__init__()
-        self.encoder_attn = LowRank(
+        self.encoder_attn = clones(LowRank(
             embed_dim=embed_dim,
             att_type=att_type,
             att_heads=att_heads,
             att_mid_dim=att_mid_dim,
-            att_mid_drop=att_mid_drop)
-        self.dropout = nn.Dropout(dropout)
+            att_mid_drop=att_mid_drop), 4)
+        self.dropout = clones(nn.Dropout(dropout), 4)
 
-        self.bifeat_emb = nn.Sequential(
+        self.bifeat_emb = clones(nn.Sequential(
             nn.Linear(2 * embed_dim, embed_dim),
             utils.activation(bifeat_emb_act),
             nn.Dropout(bifeat_emb_drop)
-        )
-        self.layer_norm = torch.nn.LayerNorm(embed_dim)
+        ), 4)
 
-        self.ff_layer = blocks.create(
+        self.layer_norm = clones(torch.nn.LayerNorm(embed_dim), 4)
+
+        self.ff_layer = clones(blocks.create(
             'FeedForward',
             embed_dim=embed_dim,
             ffn_embed_dim=embed_dim * 4,
             relu_dropout=ff_dropout,
-            dropout=ff_dropout)
+            dropout=ff_dropout), 4)
 
-    def forward(self, gx, x, mask):
+    def forward(self, cnn_gx, gcn_gx, cnn_feats, gcn_feats, cnn_mask, gcn_mask):
         """
         gx : torch.Size([4, 768])
         x : torch.Size([4, 49, 768])
         mask : torch.Size([4, 49])
 
         """
+        assert self.ff_layer != None
 
-        gx = self.encoder_attn(
-            query=gx,
-            key=x,
-            mask=mask,
-            value1=gx,
-            value2=x
-        )
+        cnn_gx = self.dropout[0](self.encoder_attn[0](query=cnn_gx, key=cnn_feats, mask=cnn_mask, value1=cnn_gx, value2=cnn_feats))
+        cnn_x_ = torch.cat([cnn_gx.unsqueeze(1).expand_as(cnn_feats), cnn_feats], dim=-1)
+        cnn_feats = self.ff_layer[0](self.layer_norm[0](self.bifeat_emb[0](cnn_x_) + cnn_feats))
 
-        gx = self.dropout(gx)
+        gcn_gx = self.dropout[1](self.encoder_attn[1](query=gcn_gx, key=gcn_feats, mask=gcn_mask, value1=gcn_gx, value2=gcn_feats))
+        gcn_x_ = torch.cat([gcn_gx.unsqueeze(1).expand_as(gcn_feats), gcn_feats], dim=-1)
+        gcn_feats = self.ff_layer[1](self.layer_norm[1](self.bifeat_emb[1](gcn_x_) + gcn_feats))
 
-        x_ = torch.cat([gx.unsqueeze(1).expand_as(x), x], dim=-1)
-        x = self.bifeat_emb(x_) + x
-        x = self.layer_norm(x)
+        all_feats = torch.cat([cnn_feats, gcn_feats], dim = 1)
+        all_mask = torch.cat([cnn_mask, gcn_mask], dim = -1)
+        all_global_feats = torch.cat([cnn_gx, gcn_gx], dim = -1)
 
-        if self.ff_layer is not None:
-            x = self.ff_layer(x)
+        cnn_gx = self.dropout[2](self.encoder_attn[2](query=cnn_gx, key=all_feats, mask=all_mask, value1=all_global_feats, value2=all_feats))
+        cnn_x_ = torch.cat([cnn_gx.unsqueeze(1).expand_as(cnn_feats), cnn_feats], dim=-1)
+        cnn_feats = self.ff_layer[2](self.layer_norm[2](self.bifeat_emb[2](cnn_x_) + cnn_feats))
 
-        return gx, x
+        gcn_gx = self.dropout[3](self.encoder_attn[3](query=gcn_gx, key=all_feats, mask=all_mask, value1=all_global_feats, value2=all_feats))
+        gcn_x_ = torch.cat([gcn_gx.unsqueeze(1).expand_as(gcn_feats), gcn_feats], dim=-1)
+        gcn_feats = self.ff_layer[3](self.layer_norm[3](self.bifeat_emb[3](gcn_x_) + gcn_feats))
+
+        return cnn_gx, gcn_gx,  cnn_feats, gcn_feats
 
 
 class Decoder(nn.Module):

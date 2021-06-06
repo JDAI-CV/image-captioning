@@ -39,11 +39,15 @@ def parse_args():
                         help='the path to the directory containing the data.')
     parser.add_argument('--ann_path', type=str, default='/content/iu_xray_resized/annotation.json',
                         help='the path to the directory containing the data.')
-    parser.add_argument('--dataset_name', type=str, default='IUXRAY', choices=['IUXRAY', 'MIMICCXR'],
+
+    parser.add_argument('--dataset_name', type=str, default='IUXRAY', choices=['IUXRAY', 'MIMICCXR','MIMICCXR_MultiImages'],
                         help='the dataset to be used.')
     parser.add_argument('--submodel', type=str, default='RGMG', choices=['RGMG', 'VSEGCN'],
                         help='the knowledge graph to be used.')
-    
+    # Encoder Mode
+    parser.add_argument('--encoder_mode', type=str, default='normal', choices=['normal', 'dualwayencoder'],
+                        help='Specify the transformer encoder')
+
 
     if len(sys.argv) == 1:
         parser.print_help()
@@ -53,6 +57,7 @@ def parse_args():
     return args
 
 args = parse_args()
+
 if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
     fw_adj = torch.tensor([
     #FOR RGMG on IUXray
@@ -78,7 +83,6 @@ if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ], dtype=torch.float,device=device)
-    
 elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
     fw_adj = torch.tensor([
 #FOR VSEGCN on IUXray
@@ -108,7 +112,7 @@ elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
         [0.0, 0.0, 0.7595885904689661, 0.7569183619130871, 0.0, 0.06928636204125185, 0.0, 0.0, 1.376195693906577, 0.0, 0.0, 0.3693909544915901, 0.0, 0.6443340011659412, 1.430262915176853, 0.4186620034983729, 0.0, 0.0, 0.0, 0.0, 0.0, 0.49199327658392233, 0.0, 0.0, 0.0] ,
         [0.0, 0.0, 0.0, 0.0, 0.6395125017555444, 0.0, 0.0, 0.0, 0.0, 0.46624078048150774, 0.6669114759436587, 0.29918669581834156, 1.4172170703435527, 0.0, 0.3484577448251243, 0.0, 0.07092804383736119, 0.0, 0.06907447518803858, 0.0, 0.0, 0.6449325692248835, 0.0, 0.0, 0.0] ,
         ], dtype=torch.float,device=device)
-elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
+elif args.submodel == 'VSEGCN' and args.dataset_name != 'IUXRAY':
     fw_adj = torch.tensor([
 #FOR VSEGCN on mimic
         [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] ,
@@ -154,18 +158,7 @@ else:
  
 
 bw_adj = fw_adj.t()
-
-if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
-    num_feat = 20
-    
-elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
-    num_feat = 24
-
-elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
-    num_feat = 36
-else:
-    raise Nonetype("There is no this kind of KG or dataset")
-    
+num_feat = fw_adj.shape[0] - 1
 
 submodel = GCNClassifier(num_feat, fw_adj, bw_adj) 
 
@@ -181,6 +174,7 @@ elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
     KG_path = '/content/pretrainedKG/mimic_gcnclassifier_v1_ones3_t0v1t2_lr1e-6_24052021_e10.pth'
 else:
     raise Nonetype("There is no this kind of KG or dataset")
+
 state_dict.update({k:v for k, v in torch.load(KG_path).items() if k in state_dict})
 
 submodel.load_state_dict(state_dict)
@@ -214,7 +208,8 @@ class Trainer(object):
                 image_dir=args.image_dir,
                 ann_path=args.ann_path,
                 tokenizer=self.tokenizer,
-                split='val'
+                split='val',
+                args = args,
             ),
             tokenizer=self.tokenizer
         )  # TODO
@@ -223,7 +218,8 @@ class Trainer(object):
                 image_dir=args.image_dir,
                 ann_path=args.ann_path,
                 tokenizer=self.tokenizer,
-                split='test'),
+                split='test',
+                args=args),
             tokenizer=self.tokenizer
         )  # TODO
         self.scorer = Scorer()
@@ -284,7 +280,8 @@ class Trainer(object):
                 image_dir=args.image_dir,
                 ann_path=args.ann_path,
                 tokenizer=self.tokenizer,
-                split='train'
+                split='train',
+                args=args,
             )
         # self.coco_set = datasets.coco_dataset.CocoDataset(
         #     image_ids_path = cfg.DATA_LOADER.TRAIN_ID,
@@ -364,7 +361,7 @@ class Trainer(object):
         if self.distributed and dist.get_rank() > 0:
             return
         info_str = ' (DataTime/BatchTime: {:.3}/{:.3}) losses = {:.5}'.format(data_time.avg, batch_time.avg, losses.avg)
-        # self.logger.info('Iteration ' + str(iteration) + info_str + ', lr = ' + str(self.optim.get_lr()))
+        self.logger.info('Iteration ' + str(iteration) + info_str + ', lr = ' + str(self.optim.get_lr()))
         for name in sorted(loss_info):
             self.logger.info('  ' + name + ' = ' + str(loss_info[name]))
         data_time.reset()
@@ -391,7 +388,7 @@ class Trainer(object):
 
             self.model.eval()
             with torch.no_grad():
-                seq_max, logP_max = self.model.module.decode(**kwargs)
+                seq_max, logP_max = self.model.decode(**kwargs)
             self.model.train()
             rewards_max, rewards_info_max = self.scorer(target_seq, seq_max.data.cpu().numpy().tolist())  # Modified
             rewards_max = utils.expand_numpy(rewards_max)

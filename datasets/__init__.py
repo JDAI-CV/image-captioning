@@ -1,10 +1,12 @@
 from datasets.coco_dataset import CocoDataset
 from datasets.radiology_dataset import  IUXRAY
 from datasets.radiology_dataset import MIMICCXR
+from datasets.radiology_dataset import MimiccxrMultiImage
 
 __factory = {
     'IUXRAY': IUXRAY,
     'MIMICCXR': MIMICCXR,
+    'MIMICCXR_MultiImages': MimiccxrMultiImage,
     'COCO': CocoDataset,
 }
 

@@ -35,6 +35,7 @@ def parse_args():
     return args
 
 
+
 args = parse_args()
 
 if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
@@ -43,6 +44,8 @@ elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
   mask_dim = 74
 elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
   mask_dim = 86
+
+
 def sample_collate(batch):
     indices, input_seq, target_seq, gv_feat, att_feats = zip(*batch)
 
@@ -61,7 +64,8 @@ def sample_collate(batch):
 
     gv_feat = torch.cat([torch.from_numpy(b) for b in gv_feat], 0)
 
-    mask_arr = torch.ones([len(att_feats), mask_dim]).float() # hard code 49
+    # IT DOESNT MATTER WHAT THE SHAPE OF MASK IS, WE WILL GET THE MASK LATER
+    mask_arr = torch.ones([len(att_feats), mask_dim]).float()
 
     att_mask = torch.cat([mask_arr], 0)
     att_feats = torch.stack(att_feats, 0) # TODO for mimic
@@ -94,7 +98,8 @@ def sample_collate_val(batch):
 
     gv_feat = torch.cat([torch.from_numpy(b) for b in gv_feat], 0)
 
-    mask_arr = torch.ones([len(att_feats), mask_dim]).float() # hard code 49
+    # IT DOESNT MATTER WHAT THE SHAPE OF MASK IS, WE WILL GET THE MASK LATER
+    mask_arr = torch.ones([len(att_feats), mask_dim]).float()
 
     att_mask = torch.cat([mask_arr], 0)
     att_feats = torch.stack(att_feats, 0)
