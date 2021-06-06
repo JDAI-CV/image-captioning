@@ -44,7 +44,7 @@ class BaseDataset(Dataset):
         self.texts = json.loads(open(self.ann_path, 'r').read())
 
         self.examples = self.texts[self.split]
-        if args.dataset == 'MIMICCXR_MultiImages':
+        if args.dataset_name == 'MIMICCXR_MultiImages':
             self.examples = self.convert_to_multi_images(self.examples)
         for i in range(len(self.examples)):
             self.examples[i]['ids'] = self.tokenizer(self.examples[i]['report'])[:self.max_seq_length]

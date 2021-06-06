@@ -9,44 +9,9 @@ import numpy as np
 import argparse
 import sys
 
-def parse_args():
-    """
-    Parse input arguments
-    """
-    parser = argparse.ArgumentParser(description='Image Captioning')
-    parser.add_argument('--folder', dest='folder', type=str, default=None)
-    parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument("--resume", type=int, default=-1)
-    parser.add_argument('--image_dir', type=str, default='/content/iu_xray_resized/images/',
-                        help='the path to the directory containing the data.')
-    parser.add_argument('--ann_path', type=str, default='/content/iu_xray_resized/annotation.json',
-                        help='the path to the directory containing the data.')
-    parser.add_argument('--dataset_name', type=str, default='IUXRAY', choices=['IUXRAY', 'MIMICCXR'],
-                        help='the dataset to be used.')
-    parser.add_argument('--submodel', type=str, default='RGMG', choices=['RGMG', 'VSEGCN'],
-                        help='the knowledge graph to be used.')
-    
-
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
-
-    args = parser.parse_args()
-    return args
-
-
-
-args = parse_args()
-
-if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
-  mask_dim = 70
-elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
-  mask_dim = 74
-elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
-  mask_dim = 86
-
 
 def sample_collate(batch):
+    mask_dim = 70
     indices, input_seq, target_seq, gv_feat, att_feats = zip(*batch)
 
     max_seq_length = max([len(x) for x in input_seq])
@@ -80,6 +45,7 @@ def sample_collate(batch):
     return indices, torch.LongTensor(input_seqs), torch.LongTensor(target_seqs), gv_feat, att_feats, att_mask
 
 def sample_collate_val(batch):
+    mask_dim = 70
 
     indices, input_seq, target_seq, gv_feat, att_feats = zip(*batch)
 

@@ -28,8 +28,8 @@ class XTransformer(BasicModel):
         super(XTransformer, self).__init__()
         self.vocab_size = cfg.MODEL.VOCAB_SIZE + 1
         # image pretrained
-        self.image_pretrained_models, self.input_visual_feats = ImageClassification.image_features(
-            'densenet', fixed_weight=False, pretrained_model=cfg.MODEL.PretrainedImageModel)
+        # self.image_pretrained_models, self.input_visual_feats = ImageClassification.image_features(
+        #     'densenet', fixed_weight=False, pretrained_model=cfg.MODEL.PretrainedImageModel)
         if args.dataset_name == 'IUXRAY':
           num_images = 2
           self.get_visual_features = self.forward_iuxray
@@ -38,6 +38,7 @@ class XTransformer(BasicModel):
           self.get_visual_features = self.forward_mimiccxr
 
         # att_feats encoder
+        self.input_visual_feats = 1024
         sequential = []
         sequential.append(nn.Linear(self.input_visual_feats * num_images, cfg.MODEL.ATT_FEATS_EMBED_DIM))
         sequential.append(utils.activation(cfg.MODEL.ATT_FEATS_EMBED_ACT))
@@ -359,6 +360,9 @@ class Encoder(nn.Module):
         self.proj_norm = nn.Sequential(
             nn.Linear(embed_dim * (layer_num + 1), embed_dim),
             torch.nn.LayerNorm(embed_dim))
+
+
+
 
     def forward(self, x, mask):
         # drop mask

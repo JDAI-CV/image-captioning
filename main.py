@@ -269,8 +269,8 @@ class Trainer(object):
                            map_location=lambda storage, loc: storage)
             )
 
-        # self.optim = Optimizer(self.model)
-        self.optim = build_optimizer(args, model)
+        self.optim = Optimizer(self.model)
+        # self.optim = build_optimizer(args, model)
         self.xe_criterion = losses.create(cfg.LOSSES.XE_TYPE).cuda()
         self.rl_criterion = losses.create(cfg.LOSSES.RL_TYPE).cuda()
 
@@ -472,9 +472,6 @@ class Trainer(object):
 
             if self.distributed:
                 dist.barrier()
-
-
-
 
 if __name__ == '__main__':
     args = parse_args()
