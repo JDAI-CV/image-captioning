@@ -27,6 +27,9 @@ class BaseDataset(Dataset):
         self.split = split
         self.args = args
         self.tokenizer = tokenizer
+        self.training_ratio = args.training_ratio
+        assert 0.0 <= self.training_ratio <= 1.0
+
         if split == 'train':
             self.transform = transforms.Compose([
                 transforms.Resize(256),
@@ -46,8 +49,19 @@ class BaseDataset(Dataset):
         self.examples = self.texts[self.split]
         if args.dataset_name == 'MIMICCXR_MultiImages':
             self.examples = self.convert_to_multi_images(self.examples)
+        if self.split == 'train':
+            self.examples = self.apply_training_ratio(self.examples)
         for i in range(len(self.examples)):
             self.examples[i]['ids'] = self.tokenizer(self.examples[i]['report'])[:self.max_seq_length]
+
+    def apply_training_ratio(self, dataset):
+            t = time.time()
+            total = len(dataset)
+            print('{} set: applying training_ratio {}  ... '.format(self.split,self.training_ratio), end='', flush=True)
+            select = int(total // (1/self.training_ratio)) + 1
+            dataset = dataset[:select]
+            print('done %d->%d (%.2fs)' % (total, select, time.time() - t), flush=True)
+            return dataset
 
     def convert_to_multi_images(self, dataset, print_num=True):
         t = time.time()

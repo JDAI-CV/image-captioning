@@ -480,7 +480,6 @@ class EncoderLayer(nn.Module):
 
         all_feats = torch.cat([cnn_feats, gcn_feats], dim=1)
         all_mask = torch.cat([cnn_mask, gcn_mask], dim=-1)
-        all_global_feats = torch.cat([cnn_gx, gcn_gx], dim=-1)
 
         cnn_gx = self.dropout[2](
             self.encoder_attn[2](query=cnn_gx, key=all_feats, mask=all_mask, value1=cnn_gx, value2=all_feats))
