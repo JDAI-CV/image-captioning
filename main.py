@@ -49,7 +49,7 @@ def parse_args():
                         help='Specify the transformer encoder')
 
     parser.add_argument('--training_ratio', type = float, default = '1.0', help ='Select the training ratio. Recommend: 0.001, 0.005, 0.01, 0.1, 0.5 and 1.0')
-
+    parser.add_argument('--KG_path', type = str, help='the path to the pretrained kg checkpoint')
 
 
     if len(sys.argv) == 1:
@@ -167,18 +167,20 @@ submodel = GCNClassifier(num_feat, fw_adj, bw_adj)
 
 state_dict = submodel.state_dict()
 
-if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
-    KG_path = '/content/pretrainedKG/gcnclassifier_v2_ones3_t401v2t3_lr1e-6_e80.pth'
-    
-elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
-    KG_path = '/content/pretrainedKG/iuxray_gcnclassifier_v1_ones3_t0v1t2_lr1e-6_23050521_e180.pth'
+# Load the kg path from argument
 
-elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
-    KG_path = '/content/pretrainedKG/mimic_gcnclassifier_v1_ones3_t0v1t2_lr1e-6_24052021_e10.pth'
-else:
-    raise Nonetype("There is no this kind of KG or dataset")
+# if args.submodel =='RGMG' and args.dataset_name =='IUXRAY':
+#     KG_path = '/content/pretrainedKG/gcnclassifier_v2_ones3_t401v2t3_lr1e-6_e80.pth'
+#
+# elif args.submodel == 'VSEGCN' and args.dataset_name =='IUXRAY':
+#     KG_path = '/content/pretrainedKG/iuxray_gcnclassifier_v1_ones3_t0v1t2_lr1e-6_23050521_e180.pth'
+#
+# elif args.submodel == 'VSEGCN' and args.dataset_name =='MIMICCXR':
+#     KG_path = '/content/pretrainedKG/mimic_gcnclassifier_v1_ones3_t0v1t2_lr1e-6_24052021_e10.pth'
+# else:
+#     raise Nonetype("There is no this kind of KG or dataset")
 
-state_dict.update({k:v for k, v in torch.load(KG_path).items() if k in state_dict})
+state_dict.update({k:v for k, v in torch.load(args.KG_path).items() if k in state_dict})
 
 submodel.load_state_dict(state_dict)
 
