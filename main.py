@@ -195,6 +195,7 @@ class Trainer(object):
         self.num_gpus = torch.cuda.device_count()
         self.distributed = self.num_gpus > 1
         if self.distributed:
+            print('init distributed')
             torch.cuda.set_device(args.local_rank)
             torch.distributed.init_process_group(
                 backend="nccl", init_method="env://"
