@@ -91,7 +91,7 @@ MODEL:
 SOLVER:
   BASE_LR: 0.000001
   TYPE: 'RADAM'                 # 'ADAM', 'SGD', 'RADAM'
-  MAX_EPOCH: 70
+  MAX_EPOCH: 20
   MAX_ITER: -1
   GRAD_CLIP: 0.1                # Norm:0.5 , Clamp:0.1
   GRAD_CLIP_TYPE: 'Clamp'       # 'Clamp'  , 'Norm'
