@@ -1,5 +1,5 @@
 # Introduction
-This repository is for **X-Linear Attention Networks for Image Captioning** (CVPR 2020). The original paper can be found [here](https://arxiv.org/pdf/2107.12292.pdf).
+This repository is for **X-Linear Attention Networks for Image Captioning** (CVPR 2020). The original paper can be found [here](https://arxiv.org/pdf/2003.14080.pdf).
 
 Please cite with the following BibTeX:
 
