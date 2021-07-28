@@ -12,6 +12,19 @@ class SCAtt(BasicAtt):
         self.attention_last2 = nn.Linear(mid_dims[-2], mid_dims[-1])
 
     def forward(self, att_map, att_mask, value1, value2):
+        """
+        att_map, att_mask, value1, value2
+
+        torch.Size([4, 8, 49, 96])
+        torch.Size([4, 49])
+        torch.Size([4, 8, 96])
+        torch.Size([4, 8, 49, 96])
+
+        """
+        # print('att_map, att_mask, value1, value2')
+        # for i in [att_map, att_mask, value1, value2]:
+        #   print(i.shape)
+
         if self.attention_basic is not None:
             att_map = self.attention_basic(att_map)
 
@@ -37,4 +50,5 @@ class SCAtt(BasicAtt):
             value2 = torch.matmul(alpha_spatial.unsqueeze(-2), value2).squeeze(-2)
 
         attn = value1 * value2 * alpha_channel
+        # raise Exception('lol')
         return attn

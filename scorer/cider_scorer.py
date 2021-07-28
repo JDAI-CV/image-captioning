@@ -11,6 +11,7 @@ import numpy as np
 import math
 import pickle
 from lib.config import cfg
+import gzip
 
 def precook(words, n=4, out=False):
     """
@@ -64,10 +65,14 @@ class CiderScorer(object):
         self.sigma = sigma
         self.crefs = []
         self.ctest = []
-
-        cider_cache = pickle.load(open(cfg.SCORER.CIDER_CACHED, 'rb'), encoding='bytes')
-        self.document_frequency = cider_cache['document_frequency']
-        self.ref_len = cider_cache['ref_len']
+        cider_cache = None # TODO
+        try:
+            cider_cache = pickle.load(gzip.open(cfg.SCORER.CIDER_CACHED))
+        except:
+            cider_cache = None
+        # print('CIDEr df: {0}'.format(len(cider_cache)))
+        self.document_frequency = defaultdict(float)  if not cider_cache else cider_cache['document_frequency']
+        self.ref_len = None if not cider_cache else cider_cache['ref_len']
         self.cook_append(test, refs)
         
     def clear(self):
@@ -169,7 +174,7 @@ class CiderScorer(object):
             return val
 
         # compute log reference length
-        # self.ref_len = np.log(float(len(self.crefs))) ###########################
+        self.ref_len = np.log(float(len(self.crefs))) ###########################
 
         scores = []
         for test, refs in zip(self.ctest, self.crefs):

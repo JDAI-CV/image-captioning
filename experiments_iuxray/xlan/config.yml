@@ -1,0 +1,148 @@
+LOGGER_NAME: 'log'
+SEED: 1546884941.160048
+
+############################ TRAIN ############################
+TRAIN:
+  BATCH_SIZE: 10
+  #################### SCHEDULED_SAMPLING ####################
+  SCHEDULED_SAMPLING:
+    START: 6
+    INC_EVERY: 5
+    INC_PROB: 0.05
+    MAX_PROB: 0.5
+  #################### REINFORCEMENT ####################
+  REINFORCEMENT:
+    START: 9999
+
+############################ TEST ############################  
+TEST:
+  BATCH_SIZE: 36
+
+############################ DATA_LOADER ############################
+DATA_LOADER:
+  NUM_WORKERS: 4
+  SHUFFLE: True
+  TRAIN_GV_FEAT: ''
+  TRAIN_ATT_FEATS: './mscoco/feature/up_down_100'
+  VAL_GV_FEAT: ''
+  VAL_ATT_FEATS: './mscoco/feature/up_down_100'
+  TEST_GV_FEAT: ''
+  TEST_ATT_FEATS: './mscoco/feature/up_down_100'
+  TRAIN_ID: './mscoco/txt/coco_train_image_id.txt'
+  VAL_ID: './mscoco/txt/coco_val_image_id.txt'
+  TEST_ID: './mscoco/txt/coco_test_image_id.txt'
+  INPUT_SEQ_PATH: './mscoco/sent/coco_train_input.pkl'
+  TARGET_SEQ_PATH: './mscoco/sent/coco_train_target.pkl'
+  SEQ_PER_IMG: 5
+  MAX_FEAT: -1
+
+############################ MODEL ############################
+MODEL:
+  TYPE: 'XLAN'
+  SEQ_LEN: 60   # Modified                               # include <EOS>/<BOS>
+  VOCAB_SIZE: 9487   # TODO                          # exclude <EOS>/<BOS>
+  ########## word embedding ##########
+  WORD_EMBED_DIM: 1024
+  WORD_EMBED_ACT: 'CELU'
+  WORD_EMBED_NORM: False
+  DROPOUT_WORD_EMBED: 0.5
+  ########## global features ##########
+  GVFEAT_DIM: 2048
+  GVFEAT_EMBED_DIM: -1
+  GVFEAT_EMBED_ACT: 'NONE'
+  DROPOUT_GV_EMBED: 0.0
+  ########## attention features ##########
+  ATT_FEATS_DIM: 1024   # Modified
+  ATT_FEATS_EMBED_DIM: 1024
+  ATT_FEATS_EMBED_ACT: 'CELU'
+  DROPOUT_ATT_EMBED: 0.5
+  ATT_FEATS_NORM: False
+  ########## attention param ##########
+  ATT_HIDDEN_SIZE: -1
+  ATT_HIDDEN_DROP: 0.0
+  ATT_ACT: 'TANH'
+  ########## rnn param ##########
+  RNN_SIZE: 1024
+  DROPOUT_LM: 0.5
+
+  ########## BOTTOM_UP ##########
+  BOTTOM_UP:
+    DROPOUT_FIRST_INPUT: 0.0
+    DROPOUT_SEC_INPUT: 0.0
+
+  ########## BILINEAR ##########
+  BILINEAR:
+    DIM: 1024
+    ENCODE_ATT_MID_DIM: [128, 64, 128]
+    DECODE_ATT_MID_DIM: [128, 64, 128]
+    ENCODE_ATT_MID_DROPOUT: 0.1
+    DECODE_ATT_MID_DROPOUT: 0.1
+    ATT_DIM: 1024
+    ACT: 'CELU'
+    ENCODE_DROPOUT: 0.5
+    DECODE_DROPOUT: 0.5
+    ENCODE_LAYERS: 4
+    DECODE_LAYERS: 1
+    TYPE: 'LowRank'
+    ATTTYPE: 'SCAtt' # SCAtt, BasicAtt
+    HEAD: 8
+    ENCODE_BLOCK: 'LowRankBilinearEnc'
+    DECODE_BLOCK: 'LowRankBilinearDec'
+    ELU_ALPHA: 1.3
+    ENCODE_BIFEAT_EMB_DROPOUT: 0.3
+
+############################ SOLVER ############################  
+SOLVER:
+  BASE_LR: 0.0005
+  TYPE: 'ADAM'                 # 'ADAM', 'SGD', 'ADAGRAD', 'RMSPROP'
+  MAX_EPOCH: 70
+  MAX_ITER: -1
+  GRAD_CLIP: 0.5               # Norm:5 , Clamp:0.1
+  GRAD_CLIP_TYPE: 'Norm'       # 'Clamp', 'Norm'
+  WEIGHT_DECAY: 0.0000
+  WEIGHT_DECAY_BIAS: 0.0
+  BIAS_LR_FACTOR: 1
+  DISPLAY: 20
+  TEST_INTERVAL: 1
+  SNAPSHOT_ITERS: 1
+
+  ########## SGD ##########
+  SGD:
+    MOMENTUM: 0.9
+  ########## ADAM ##########
+  ADAM:
+    BETAS: [0.9, 0.98]
+    EPS: 1.0e-9
+  ########## LR_POLICY ##########
+  LR_POLICY:
+    TYPE: 'Noam'              # 'Fix', 'Step', 'Noam', 'Plateau'
+    GAMMA: 0.8
+    STEP_SIZE: 3
+    SETP_TYPE: 'Iter'         # 'Epoch', 'Iter'
+    WARMUP: 10000             #  For Noam only
+    FACTOR: 1.0               #  For Noam only
+    MODEL_SIZE: 1024          #  For Noam only
+
+############################ LOSSES ############################
+LOSSES:
+  XE_TYPE: 'CrossEntropy'     # 'CrossEntropy', 'LabelSmoothing'
+  LABELSMOOTHING: 0.0
+  RL_TYPE: 'RewardCriterion'
+
+############################ SCORER ############################
+SCORER:
+  TYPES: ['CIDEr']
+  WEIGHTS: [1.0]
+  GT_PATH: './mscoco/misc/coco_train_gts.pkl'
+  CIDER_CACHED: './mscoco/misc/coco_train_cider.pkl'
+  
+############################ INFERENCE ############################
+INFERENCE:
+  VOCAB: './mscoco/txt/coco_vocabulary.txt'
+  ID_KEY: 'image_id'
+  CAP_KEY: 'caption'
+  EVAL: 'COCO'
+  VAL_ANNFILE: './mscoco/misc/captions_val5k.json'
+  TEST_ANNFILE: './mscoco/misc/captions_test5k.json'
+  BEAM_SIZE: 3
+  GREEDY_DECODE: True

@@ -75,6 +75,7 @@ def decode_sequence(vocab, seq):
         words = []
         for t in range(T):
             ix = seq[n, t]
+            ix = ix.item()
             if ix == 0:
                 break
             words.append(vocab[ix])

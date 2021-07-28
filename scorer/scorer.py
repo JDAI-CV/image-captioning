@@ -23,16 +23,16 @@ class Scorer(object):
         super(Scorer, self).__init__()
         self.scorers = []
         self.weights = cfg.SCORER.WEIGHTS
-        self.gts = pickle.load(open(cfg.SCORER.GT_PATH, 'rb'), encoding='bytes')
+        # self.gts = pickle.load(open(cfg.SCORER.GT_PATH, 'rb'), encoding='bytes')
         for name in cfg.SCORER.TYPES:
             self.scorers.append(factory[name]())
 
-    def __call__(self, ids, res):
+    def __call__(self, gts, res):
         hypo = [get_sents(r) for r in res]
-        gts = [self.gts[i] for i in ids]
+        gts = gts
 
         rewards_info = {}
-        rewards = np.zeros(len(ids))
+        rewards = np.zeros(len(gts))
         for i, scorer in enumerate(self.scorers):
             score, scores = scorer.compute_score(gts, hypo)
             rewards += self.weights[i] * scores
